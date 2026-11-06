@@ -1,20 +1,32 @@
-# Ejemplo para la raíz del proyecto cuando frontend y backend están en carpetas hermanas.
-# Si usan repositorios separados, cada repo lleva su propio compose y el BE Lead coordina el conjunto.
-# Ajusta rutas y puertos con el BE Lead. Cuando exista el servidor de tiempo real (Sprint 2), se agrega como un tercer servicio.
+# Levanta todo el sistema. Ubicación: Frontend_AulaSync/, con backend_AulaSync/ como carpeta hermana.
+# Antes: copia backend-api/.env.example a backend-api/.env (en el backend) y completa las credenciales de Firebase.
 services:
   frontend:
     build:
-      context: ./frontend
+      context: .
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000}
+        # Se incrusta al compilar (Vite). El navegador llama a esta URL, por eso es localhost y no el nombre del servicio.
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
     ports:
       - "3000:80"
     depends_on:
       - backend-api
+    restart: unless-stopped
 
   backend-api:
-    build: ./backend-api
-    ports:
-      - "4000:4000"
+    build:
+      context: ../backend_AulaSync/backend-api
     env_file:
-      - ./backend-api/.env   # credenciales de Firebase: nunca en el repositorio
+      - ../backend_AulaSync/backend-api/.env   # credenciales de Firebase: nunca en el repositorio
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  backend-realtime:
+    build:
+      context: ../backend_AulaSync/backend-realtime
+    environment:
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    restart: unless-stopped

@@ -44,37 +44,39 @@
   --color-room-warning: #fcd34d;
 }
 
-html {
-  font-size: 100%; /* respeta el tamaño de texto del usuario (hasta 200 %) */
-}
+@layer base {
+  html {
+    font-size: 100%; /* respeta el tamaño de texto del usuario (hasta 200 %) */
+  }
 
-body {
-  background: var(--color-bg);
-  color: var(--color-ink);
-  font-family: var(--font-body);
-  font-size: 1rem;
-  line-height: 1.5;
-}
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
 
-h1, h2, h3 {
-  font-family: var(--font-heading);
-}
-h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; }
-h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; }
-h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
+  h1, h2, h3 {
+    font-family: var(--font-heading);
+  }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; }
+  h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; }
+  h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 
-a { color: var(--color-primary); text-decoration: underline; }
+  a { color: var(--color-primary); text-decoration: underline; }
 
-/* Foco siempre visible: 3 px sólidos con 2 px de separación */
-:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
-}
+  /* Foco siempre visible: 3 px sólidos con 2 px de separación */
+  :focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 
-/* El h1 y el main reciben foco por código al navegar; no necesitan anillo */
-h1[tabindex="-1"]:focus,
-main[tabindex="-1"]:focus {
-  outline: none;
+  /* El h1 y el main reciben foco por código al navegar; no necesitan anillo */
+  h1[tabindex="-1"]:focus,
+  main[tabindex="-1"]:focus {
+    outline: none;
+  }
 }
 
 @layer components {
@@ -100,4 +102,12 @@ main[tabindex="-1"]:focus {
   .btn-secondary:hover { background: var(--color-primary-tint); }
   .btn-danger { background: var(--color-error); color: #fff; }
   .btn-danger:hover { background: var(--color-error-hover); }
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    background: var(--color-disabled-bg);
+    color: var(--color-text-subtle);
+    border-color: transparent;
+    cursor: not-allowed;
+  }
+  .btn[aria-busy="true"] { cursor: progress; }
 }

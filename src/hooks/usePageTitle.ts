@@ -3,12 +3,10 @@ import { useEffect } from "react";
 let primeraCarga = true;
 
 /**
- * Pone un título único a cada pantalla (WCAG 2.4.2) y mueve el foco al h1
- * cuando cambia la ruta, para que el lector de pantalla anuncie la nueva página.
- * En la primera carga NO mueve el foco, para que «Saltar al contenido» siga siendo
- * el primer elemento al que llega la tecla Tab.
+ * Título único por pantalla (WCAG 2.4.2) y foco al h1 al cambiar de ruta.
+ * En la primera carga NO mueve el foco, para que «Saltar al contenido» sea el primer Tab.
  */
-export function usePageTitle(titulo) {
+export function usePageTitle(titulo: string): void {
   useEffect(() => {
     document.title = `${titulo} · Salón de Estudio`;
 
