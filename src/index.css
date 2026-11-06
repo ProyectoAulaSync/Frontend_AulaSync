@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* Tokens de la Guía visual (Norman). Solo se usan estos colores y estas dos fuentes. */
+@theme {
+  --font-heading: "Lexend", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
+
+  --color-ink: #0f172a;
+  --color-text-muted: #475569;
+  --color-text-subtle: #64748b;
+  --color-bg: #ffffff;
+  --color-surface: #f8fafc;
+  --color-surface-alt: #f1f5f9;
+  --color-disabled-bg: #e2e8f0;
+  --color-border-control: #64748b;
+  --color-border-decor: #cbd5e1;
+
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #1e40af;
+  --color-primary-active: #1e3a8a;
+  --color-primary-tint: #eff6ff;
+  --color-accent: #0f766e;
+
+  --color-error: #b91c1c;
+  --color-error-hover: #991b1b;
+  --color-error-bg: #fef2f2;
+  --color-error-text: #7f1d1d;
+  --color-success: #15803d;
+  --color-success-bg: #f0fdf4;
+  --color-success-text: #14532d;
+  --color-warning: #b45309;
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #78350f;
+
+  /* Tema oscuro de la sala (se usa solo en las pantallas de la sala) */
+  --color-room-bg: #0f172a;
+  --color-room-surface: #1e293b;
+  --color-room-text: #f8fafc;
+  --color-room-text-muted: #cbd5e1;
+  --color-room-border: #94a3b8;
+  --color-room-focus: #93c5fd;
+  --color-room-danger: #fca5a5;
+  --color-room-success: #86efac;
+  --color-room-warning: #fcd34d;
+}
+
+html {
+  font-size: 100%; /* respeta el tamaño de texto del usuario (hasta 200 %) */
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+}
+h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; }
+h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; }
+h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
+
+a { color: var(--color-primary); text-decoration: underline; }
+
+/* Foco siempre visible: 3 px sólidos con 2 px de separación */
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* El h1 y el main reciben foco por código al navegar; no necesitan anillo */
+h1[tabindex="-1"]:focus,
+main[tabindex="-1"]:focus {
+  outline: none;
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 1rem;
+    border-radius: 8px;
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--color-primary); color: #fff; }
+  .btn-primary:hover { background: var(--color-primary-hover); }
+  .btn-primary:active { background: var(--color-primary-active); }
+  .btn-secondary { background: #fff; color: var(--color-primary); border: 2px solid var(--color-primary); }
+  .btn-secondary:hover { background: var(--color-primary-tint); }
+  .btn-danger { background: var(--color-error); color: #fff; }
+  .btn-danger:hover { background: var(--color-error-hover); }
+}
