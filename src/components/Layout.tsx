@@ -16,7 +16,7 @@ export default function Layout() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3">
           <Link to="/" className="flex items-center gap-2 font-heading text-lg font-semibold text-ink no-underline">
             <BookOpen aria-hidden="true" className="h-6 w-6" />
-            Salón de Estudio
+            AulaSync
           </Link>
           <nav aria-label="Principal" className="flex flex-wrap items-center gap-4">
             <Link to="/ingreso" className="font-heading font-semibold">
@@ -35,11 +35,9 @@ export default function Layout() {
 
       <footer className="border-t border-border-decor bg-primary-tint">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-sm text-text-muted">
-          <p>© 2026 Salón de Estudio Colaborativo. Todos los derechos reservados.</p>
+          <p>© 2026 AulaSync. Todos los derechos reservados.</p>
           <nav aria-label="Información legal y ayuda">
             <ul className="flex flex-wrap gap-x-6 gap-y-2">
-              <li><Link to="/terminos">Términos de servicio</Link></li>
-              <li><Link to="/privacidad">Política de privacidad</Link></li>
               <li><Link to="/accesibilidad">Accesibilidad</Link></li>
               <li><Link to="/ayuda">Centro de ayuda</Link></li>
             </ul>

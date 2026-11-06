@@ -8,7 +8,7 @@ let primeraCarga = true;
  */
 export function usePageTitle(titulo: string): void {
   useEffect(() => {
-    document.title = `${titulo} · Salón de Estudio`;
+    document.title = `${titulo} · AulaSync`;
 
     if (primeraCarga) {
       primeraCarga = false;
