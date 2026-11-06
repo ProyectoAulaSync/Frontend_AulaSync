@@ -51,7 +51,7 @@ docker compose up --build
 
 ## Rutas
 
-`/` inicio · `/ingreso` · `/registro` · `/panel` · `/perfil` · `/salas/:id` · `/ayuda` · `/terminos` · `/privacidad` · `/accesibilidad` · `/base-tecnica` (prueba extremo a extremo: muestra el dato de Firestore con estados cargando, error con «Reintentar» y éxito) · cualquier otra ruta muestra la página 404.
+`/` inicio · `/ingreso` · `/registro` · `/registro/usuario` · `/panel` · `/perfil` · `/salas/nueva` · `/salas/:id` · `/ayuda` · `/accesibilidad` · `/base-tecnica` (prueba extremo a extremo: muestra el dato de Firestore con estados cargando, error con «Reintentar» y éxito) · cualquier otra ruta muestra la página 404.
 
 ## Despliegue en Vercel
 

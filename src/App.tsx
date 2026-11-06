@@ -16,12 +16,12 @@ export default function App() {
             <Route path="/" element={<InicioPage />} />
             <Route path="/ingreso" element={<PaginaPendiente titulo="Iniciar sesión" />} />
             <Route path="/registro" element={<PaginaPendiente titulo="Crear cuenta" />} />
+            <Route path="/registro/usuario" element={<PaginaPendiente titulo="Elegir nombre de usuario" />} />
             <Route path="/panel" element={<PaginaPendiente titulo="Mis salas" />} />
             <Route path="/perfil" element={<PaginaPendiente titulo="Mi perfil" />} />
+            <Route path="/salas/nueva" element={<PaginaPendiente titulo="Crear Sala" />} />
             <Route path="/salas/:id" element={<PaginaPendiente titulo="Sala" />} />
             <Route path="/ayuda" element={<PaginaPendiente titulo="Centro de ayuda" />} />
-            <Route path="/terminos" element={<PaginaPendiente titulo="Términos de servicio" />} />
-            <Route path="/privacidad" element={<PaginaPendiente titulo="Política de privacidad" />} />
             <Route path="/accesibilidad" element={<PaginaPendiente titulo="Accesibilidad" />} />
             <Route path="/base-tecnica" element={<BaseTecnicaPage />} />
             <Route path="*" element={<NotFoundPage />} />
