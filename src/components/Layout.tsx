@@ -1,7 +1,27 @@
-import { BookOpen } from "lucide-react";
-import { Link, Outlet } from "react-router-dom";
+import { BookOpen, LogOut } from "lucide-react";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
+import { cerrarSesion } from "../services/auth";
+import Boton from "./Boton";
+
+const enlaceNav = ({ isActive }: { isActive: boolean }) =>
+  `inline-flex min-h-11 items-center font-heading font-semibold ${isActive ? "text-ink underline" : ""}`;
 
 export default function Layout() {
+  const { estado, perfil } = useAuth();
+  const navegar = useNavigate();
+  const { mostrarAviso } = useToast();
+  const conSesion = estado === "con-sesion" && perfil !== null;
+  const perfilCompleto = conSesion && perfil.profileComplete;
+
+  function salir() {
+    // Cerrar sesión lleva al inicio. Se navega primero para que la ruta protegida no mande a «Iniciar sesión».
+    navegar("/");
+    void cerrarSesion();
+    mostrarAviso("Cerraste sesión.");
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Primer elemento enfocable: salta cabecera y navegación (WCAG 2.4.1) */}
@@ -14,18 +34,38 @@ export default function Layout() {
 
       <header className="border-b border-border-decor bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3">
-          <Link to="/" className="flex items-center gap-2 font-heading text-lg font-semibold text-ink no-underline">
+          {/* Con sesión el logo lleva al Panel; sin sesión, al inicio. */}
+          <Link
+            to={perfilCompleto ? "/panel" : "/"}
+            className="flex min-h-11 items-center gap-2 font-heading text-lg font-semibold text-ink no-underline"
+          >
             <BookOpen aria-hidden="true" className="h-6 w-6" />
             AulaSync
           </Link>
-          <nav aria-label="Principal" className="flex flex-wrap items-center gap-4">
-            <Link to="/ingreso" className="font-heading font-semibold">
-              Iniciar sesión
-            </Link>
-            <Link to="/registro" className="btn btn-secondary">
-              Crear cuenta
-            </Link>
-          </nav>
+
+          {conSesion ? (
+            <nav aria-label="Principal" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {perfilCompleto && (
+                <>
+                  <NavLink to="/panel" className={enlaceNav}>Panel</NavLink>
+                  <NavLink to="/perfil" className={enlaceNav}>Perfil</NavLink>
+                  <NavLink to="/ayuda" className={enlaceNav}>Ayuda</NavLink>
+                </>
+              )}
+              <Boton variante="neutral" onClick={salir} icono={<LogOut aria-hidden="true" className="h-4 w-4" />}>
+                Cerrar sesión
+              </Boton>
+            </nav>
+          ) : (
+            <nav aria-label="Principal" className="flex flex-wrap items-center gap-4">
+              <Link to="/ingreso" className="inline-flex min-h-11 items-center font-heading font-semibold">
+                Iniciar sesión
+              </Link>
+              <Link to="/registro" className="btn btn-secondary">
+                Crear cuenta
+              </Link>
+            </nav>
+          )}
         </div>
       </header>
 
