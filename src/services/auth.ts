@@ -126,7 +126,7 @@ export async function conectarSocket(): Promise<void> {
   onAuthStateChanged(firebaseAuth, async (user) => {
     if (user) {
       const idToken = await user.getIdToken();
-      const socket = io("http://localhost:3002", {
+      const socket = io("http://localhost:3001", {
         auth: {
           token: idToken,
         },
