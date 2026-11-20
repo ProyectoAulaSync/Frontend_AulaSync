@@ -6,6 +6,8 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "required"> & {
   etiqueta: string;
   /** Campo requerido: muestra el asterisco (*) junto a la etiqueta. */
   obligatorio?: boolean;
+  /** Muestra el texto «Obligatorio» junto al asterisco. */
+  textoObligatorio?: boolean;
   /** Línea gris bajo el campo con la regla, antes de que se cometa el error. */
   ayuda?: string;
   /** Mensaje de error (texto rojo con ícono) justo debajo del campo. */
@@ -30,6 +32,7 @@ export default function Campo({
   id,
   etiqueta,
   obligatorio = false,
+  textoObligatorio = false,
   ayuda,
   error,
   exito,
@@ -60,6 +63,9 @@ export default function Campo({
             {" "}
             *
           </span>
+        )}
+        {obligatorio && textoObligatorio && (
+          <span className="ml-2 text-xs font-normal text-text-muted">Obligatorio</span>
         )}
       </label>
 

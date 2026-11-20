@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from "react";
 import { Link } from "react-router-dom";
+import { UserPlus } from "lucide-react";
 import Boton from "../components/Boton";
 import BotonGoogle from "../components/BotonGoogle";
 import Campo from "../components/Campo";
@@ -148,32 +149,38 @@ export default function RegistroPage() {
   if (cargaExitosa) return <Cargando texto="Creando tu cuenta…" />;
 
   return (
-    <TarjetaFormulario titulo="Crear cuenta">
+    <TarjetaFormulario
+      titulo="Crear cuenta"
+      insignia="Registro institucional"
+      descripcion="Regístrate para crear y participar en salas de estudio grupales."
+    >
       {fallo && <Mensaje tipo={fallo.tipo} titulo={fallo.texto} />}
 
       <form onSubmit={enviar} noValidate className={`space-y-5 ${fallo ? "mt-5" : ""}`}>
-        <Campo
-          id={ID("nombres")}
-          etiqueta="Nombres"
-          obligatorio
-          autoComplete="given-name"
-          placeholder="Ej: María Fernanda"
-          value={valores.nombres}
-          onChange={(e) => cambiar("nombres", e.target.value)}
-          onBlur={() => tocar("nombres")}
-          error={errorVisible("nombres")}
-        />
-        <Campo
-          id={ID("apellidos")}
-          etiqueta="Apellidos"
-          obligatorio
-          autoComplete="family-name"
-          placeholder="Ej: Gómez Rojas"
-          value={valores.apellidos}
-          onChange={(e) => cambiar("apellidos", e.target.value)}
-          onBlur={() => tocar("apellidos")}
-          error={errorVisible("apellidos")}
-        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Campo
+            id={ID("nombres")}
+            etiqueta="Nombres"
+            obligatorio
+            autoComplete="given-name"
+            placeholder="Ej: María Fernanda"
+            value={valores.nombres}
+            onChange={(e) => cambiar("nombres", e.target.value)}
+            onBlur={() => tocar("nombres")}
+            error={errorVisible("nombres")}
+          />
+          <Campo
+            id={ID("apellidos")}
+            etiqueta="Apellidos"
+            obligatorio
+            autoComplete="family-name"
+            placeholder="Ej: Gómez Rojas"
+            value={valores.apellidos}
+            onChange={(e) => cambiar("apellidos", e.target.value)}
+            onBlur={() => tocar("apellidos")}
+            error={errorVisible("apellidos")}
+          />
+        </div>
         <Campo
           id={ID("username")}
           etiqueta="Nombre de usuario"
@@ -181,7 +188,7 @@ export default function RegistroPage() {
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          ayuda="De 3 a 20 caracteres: letras, números y guion bajo."
+          ayuda="Será visible para tus compañeros de sala."
           value={valores.username}
           onChange={(e) => cambiar("username", e.target.value)}
           onBlur={() => tocar("username")}
@@ -226,7 +233,14 @@ export default function RegistroPage() {
           error={errorVisible("password")}
         />
 
-        <Boton type="submit" ancho cargando={enviando === "cuenta"} textoCargando="Creando cuenta…" disabled={enviando === "google"}>
+        <Boton
+          type="submit"
+          ancho
+          cargando={enviando === "cuenta"}
+          textoCargando="Creando cuenta…"
+          disabled={enviando === "google"}
+          icono={<UserPlus aria-hidden="true" className="h-5 w-5" />}
+        >
           Crear cuenta
         </Boton>
 

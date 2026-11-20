@@ -4,7 +4,7 @@ export default function CargandoTarjetas({ cantidad = 4, texto = "Cargando…" }
     <div className="w-full">
       <div aria-hidden="true" className="motion-safe:animate-pulse motion-reduce:animate-none">
         <div className="mb-6 h-6 w-32 rounded bg-disabled-bg" />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: cantidad }, (_, i) => (
             <div key={i} className="flex h-32 flex-col justify-between rounded-xl border border-border-decor bg-white p-4 shadow-sm">
               <div className="h-5 w-3/4 rounded bg-disabled-bg" />
