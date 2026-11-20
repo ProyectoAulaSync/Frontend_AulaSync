@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import Boton from "../components/Boton";
@@ -8,10 +8,12 @@ import EstadoVacio from "../components/EstadoVacio";
 import { useAuth } from "../hooks/useAuth";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useSalas } from "../hooks/useSalas";
+import { obtenerMateria } from "../lib/materias";
 
 export default function PanelPage() {
   usePageTitle("Panel");
   const { perfil } = useAuth();
+  const location = useLocation();
   const { estado, reintentar } = useSalas();
   const [mostrarCarga, setMostrarCarga] = useState(false);
 
@@ -28,8 +30,19 @@ export default function PanelPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1>Panel</h1>
-      {perfil && <p className="mt-1 text-text-muted">Hola, {perfil.nombres || perfil.username}.</p>}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1>Panel</h1>
+          {perfil && <p className="mt-1 text-text-muted">Hola, {perfil.nombres || perfil.username}.</p>}
+        </div>
+        <Link
+          to="/salas/nueva"
+          state={{ backgroundLocation: location }}
+          className="btn btn-primary"
+        >
+          Crear sala
+        </Link>
+      </header>
 
       <div className="mt-8 flex min-h-72 items-center justify-center">
         {estado.tipo === "cargando" && mostrarCarga && <CargandoTarjetas texto="Cargando tus salas…" />}
@@ -42,15 +55,11 @@ export default function PanelPage() {
           <EstadoVacio
             icono={<Users className="h-10 w-10 text-primary" />}
             titulo="Aún no tienes salas"
-            texto="Pronto podrás crear una sala o unirte a una con su ID para estudiar con tu grupo."
+            texto="Crea una sala para organizar un espacio de estudio colaborativo. Pronto podrás unirte con el ID de una sala."
             acciones={
-              <>
-                {/* La creación y la unión a Salas se construyen en un sprint posterior. */}
-                <Boton disabled>Crear sala</Boton>
-                <Boton variante="neutral" disabled>
-                  Unirse con ID
-                </Boton>
-              </>
+              <Boton variante="neutral" disabled>
+                Unirse con ID
+              </Boton>
             }
           />
         )}
@@ -59,17 +68,21 @@ export default function PanelPage() {
           <section aria-labelledby="titulo-salas" className="w-full">
             <h2 id="titulo-salas">Tus Salas</h2>
             <ul className="mt-6 grid gap-4 md:grid-cols-2">
-              {estado.salas.map((sala) => (
-                <li key={sala.id} className="rounded-xl border border-border-decor bg-white p-4 shadow-sm">
-                  <h3>{sala.nombre}</h3>
-                  <p className="mt-1 text-sm text-text-muted">
-                    ID de la Sala: {sala.id} · {sala.rol}
-                  </p>
-                  <Link to={`/salas/${sala.id}`} className="btn btn-primary mt-4">
-                    Entrar a la Sala
-                  </Link>
-                </li>
-              ))}
+              {estado.salas.map((sala) => {
+                const materia = perfil ? obtenerMateria(perfil.uid, sala.id) : null;
+                return (
+                  <li key={sala.id} className="rounded-xl border border-border-decor bg-white p-4 shadow-sm">
+                    <h3>{sala.nombre}</h3>
+                    <p className="mt-1 text-sm text-text-muted">
+                      ID de la Sala: {sala.id} · {sala.rol}
+                    </p>
+                    {materia && <p className="mt-1 text-sm text-text-muted">Materia: {materia}</p>}
+                    <Link to={`/salas/${sala.id}`} className="btn btn-primary mt-4">
+                      Entrar a la Sala
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}

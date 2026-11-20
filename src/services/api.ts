@@ -35,7 +35,7 @@ export class ApiError extends Error {
   }
 }
 
-type Opciones = {
+export type OpcionesPeticion = {
   metodo?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   cuerpo?: unknown;
   /** Adjunta el ID token de Firebase de la persona con sesión (Authorization: Bearer). */
@@ -43,7 +43,10 @@ type Opciones = {
   signal?: AbortSignal;
 };
 
-async function peticion<T>(ruta: string, { metodo = "GET", cuerpo, conSesion = false, signal }: Opciones = {}): Promise<T> {
+export async function peticion<T>(
+  ruta: string,
+  { metodo = "GET", cuerpo, conSesion = false, signal }: OpcionesPeticion = {},
+): Promise<T> {
   const headers: Record<string, string> = {};
   if (cuerpo !== undefined) headers["Content-Type"] = "application/json";
   if (conSesion) {

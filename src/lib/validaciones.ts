@@ -27,6 +27,13 @@ export function validarNombreDeUsuario(valor: string): string | null {
   return null;
 }
 
+export function validarNombreDeSala(valor: string): string | null {
+  const v = valor.trim();
+  if (!v) return "Escribe el nombre de la sala.";
+  if (v.length > 80) return "El nombre de la sala debe tener máximo 80 caracteres.";
+  return null;
+}
+
 export function validarCorreo(valor: string): string | null {
   const v = valor.trim();
   if (!v) return "Escribe tu correo electrónico.";
