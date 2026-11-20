@@ -2,6 +2,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiError, obtenerMiPerfil, type PerfilUsuario } from "../services/api";
 import { firebaseAuth } from "../services/firebase";
+import { conectar, desconectar } from "../services/realtime";
 import { AuthContext, type AuthContextValor, type EstadoSesion } from "./auth-context";
 
 // Mantiene la sesión de Firebase y el perfil de la API sincronizados para toda la aplicación.
@@ -45,6 +46,16 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       }),
     [cargarPerfil],
   );
+
+  useEffect(() => {
+    if (estado !== "con-sesion") {
+      desconectar();
+      return;
+    }
+
+    conectar();
+    return desconectar;
+  }, [estado]);
 
   const establecerPerfil = useCallback((p: PerfilUsuario) => {
     version.current++;

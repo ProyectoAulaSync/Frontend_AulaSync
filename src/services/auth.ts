@@ -1,11 +1,9 @@
 import {
   GoogleAuthProvider,
-  onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import { io } from "socket.io-client";
 import {
   ApiError,
   registrarUsuario,
@@ -119,26 +117,6 @@ export async function registrarYEntrar(datos: DatosRegistro): Promise<PerfilUsua
 
 export function cerrarSesion(): Promise<void> {
   return signOut(firebaseAuth);
-}
-
-/** Texto seguro para mostrar ante cualquier error inesperado (nunca el mensaje técnico original). */
-export async function conectarSocket(): Promise<void> {
-  onAuthStateChanged(firebaseAuth, async (user) => {
-    if (user) {
-      const idToken = await user.getIdToken();
-      const socket = io("http://localhost:3001", {
-        auth: {
-          token: idToken,
-        },
-      });
-      socket.on("connect", () => {
-        console.log("✅ Conectado al servidor de tiempo real");
-      });
-      socket.on("connect_error", (err) => {
-        console.error("❌ Error de conexión:", err.message);
-      });
-    }
-  });
 }
 
 export function mensajeDeError(error: unknown): string {
