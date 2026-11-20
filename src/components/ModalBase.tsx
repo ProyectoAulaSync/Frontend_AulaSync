@@ -8,6 +8,7 @@ type Props = {
   titulo: string;
   descripcion?: string;
   eyebrow?: string;
+  tituloPrimario?: boolean;
   children: ReactNode;
   error?: string | null;
   confirmando?: boolean;
@@ -25,6 +26,7 @@ export default function ModalBase({
   titulo,
   descripcion,
   eyebrow,
+  tituloPrimario = false,
   children,
   error,
   confirmando = false,
@@ -139,6 +141,7 @@ export default function ModalBase({
               <Boton
                 variante="neutral"
                 aria-label="Cerrar"
+                data-modal-close
                 onClick={onCerrar}
                 disabled={confirmando}
                 icono={<X aria-hidden="true" className="h-5 w-5" />}
@@ -146,7 +149,12 @@ export default function ModalBase({
             )}
           </div>
         )}
-        <Titulo id={`${id}-titulo`} className={nivelTitulo === "h1" ? "text-2xl" : "text-xl"}>{titulo}</Titulo>
+        <Titulo
+          id={`${id}-titulo`}
+          className={`${nivelTitulo === "h1" ? "text-2xl" : "text-xl"}${tituloPrimario ? " text-primary" : ""}`}
+        >
+          {titulo}
+        </Titulo>
         {descripcion && (
           <p id={descripcionId} className="mt-2 text-text-muted">
             {descripcion}

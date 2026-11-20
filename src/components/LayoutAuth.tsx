@@ -10,7 +10,6 @@ const beneficios = [
 export default function LayoutAuth() {
   const { pathname } = useLocation();
   const esIngreso = pathname === "/ingreso";
-  const esRegistro = pathname === "/registro";
 
   return (
     <div className="grid min-h-svh min-w-0 grid-cols-1 bg-surface lg:grid-cols-[1.05fr_0.95fr]">
@@ -71,20 +70,13 @@ export default function LayoutAuth() {
           className="mx-auto flex w-full min-w-0 flex-1 flex-col px-4 py-5 outline-none sm:px-8 sm:py-8 lg:px-10 xl:px-16"
         >
           <nav aria-label="Navegación de autenticación" className="flex min-h-11 items-center justify-between gap-3">
-            <Link to="/" className="inline-flex min-h-11 min-w-0 items-center font-medium">
-              <span aria-hidden="true" className="mr-2">←</span>
+            <Link
+              to="/"
+              className="group inline-flex min-h-11 min-w-0 items-center text-base font-semibold text-ink no-underline hover:text-primary hover:no-underline"
+            >
+              <span aria-hidden="true" className="mr-1 text-xl leading-none text-ink group-hover:text-primary">←</span>
               Volver al inicio
             </Link>
-            {esIngreso && (
-              <Link to="/registro" className="inline-flex min-h-11 shrink-0 items-center font-semibold">
-                Crear cuenta
-              </Link>
-            )}
-            {esRegistro && (
-              <Link to="/ingreso" className="inline-flex min-h-11 shrink-0 items-center text-right font-semibold">
-                ¿Ya tienes una cuenta? Iniciar sesión
-              </Link>
-            )}
           </nav>
 
           <div className="flex flex-1 items-start justify-center py-6 sm:py-10">

@@ -254,7 +254,10 @@ export default function RegistroPage() {
       </form>
 
       <p className="mt-6 text-center text-sm text-text-muted">
-        ¿Ya tienes cuenta? <Link to="/ingreso">Iniciar sesión</Link>
+        ¿Ya tienes cuenta?{" "}
+        <Link to="/ingreso" className="auth-footer-link">
+          Iniciar sesión
+        </Link>
       </p>
     </TarjetaFormulario>
   );

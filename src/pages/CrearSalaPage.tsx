@@ -126,7 +126,6 @@ export default function CrearSalaPage({ comoModal = false }: Props) {
         data-crear-sala-nombre
         etiqueta="Nombre de la sala"
         obligatorio
-        textoObligatorio
         autoComplete="off"
         placeholder="Ej. Cálculo Multivariable - Repaso Parcial 2"
         ayuda="Un nombre descriptivo facilita que tus compañeros identifiquen la sesión."
@@ -151,8 +150,8 @@ export default function CrearSalaPage({ comoModal = false }: Props) {
     return (
       <ModalBase
         abierto
-        eyebrow="Espacio académico interactivo"
         titulo="Crear nueva sala"
+        tituloPrimario
         descripcion="Configura los detalles de tu espacio colaborativo de estudio."
         nivelTitulo="h1"
         ancho="max-w-xl"

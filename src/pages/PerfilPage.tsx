@@ -236,7 +236,7 @@ export default function PerfilPage() {
   if (estado === "cargando") return <Cargando texto="Cargando tu perfil…" />;
   if (estado === "error") {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
+      <div className="page-container">
         <EstadoError
           titulo="No pudimos cargar tu perfil"
           texto="Revisa tu conexión e inténtalo de nuevo."
@@ -259,23 +259,23 @@ export default function PerfilPage() {
       : null;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <header className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <p className="font-heading text-sm font-semibold text-primary">Cuenta</p>
-          <h1 className="mt-1">Mi perfil</h1>
-          <p className="mt-2 text-text-muted">Administra tu información personal.</p>
-        </div>
-        {!editando && (
-          <Boton id="editar-perfil" variante="neutral" onClick={iniciarEdicion} icono={<Pencil aria-hidden="true" className="h-4 w-4" />}>
-            Editar perfil
-          </Boton>
-        )}
-      </header>
+    <div className="page-container">
+      <div className="mx-auto w-full max-w-[46rem]">
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-primary">Mi perfil</h1>
+            <p className="mt-2 text-text-muted">Administra tu información personal.</p>
+          </div>
+          {!editando && (
+            <Boton id="editar-perfil" variante="neutral" onClick={iniciarEdicion} icono={<Pencil aria-hidden="true" className="h-4 w-4" />}>
+              Editar perfil
+            </Boton>
+          )}
+        </header>
 
-      <p aria-live="polite" className="mb-4 min-h-6 font-medium text-success">{avisoGuardado}</p>
+        <p aria-live="polite" className="mb-4 min-h-6 font-medium text-success">{avisoGuardado}</p>
 
-      <article className="rounded-xl border border-border-decor bg-white p-5 shadow-sm sm:p-8">
+      <article className="rounded-xl border border-border-decor bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
           <Avatar avatar={perfil.avatar} nombres={perfil.nombres} apellidos={perfil.apellidos} tamano={100} />
           <div>
@@ -300,7 +300,7 @@ export default function PerfilPage() {
 
           {editando ? (
             <form onSubmit={guardar} noValidate className="space-y-5">
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-5 md:grid-cols-2">
                 <Campo
                   id="perfil-nombres"
                   ref={primerCampoRef}
@@ -336,7 +336,7 @@ export default function PerfilPage() {
                   error={erroresVisibles.username}
                   exito={usuarioDisponible}
                 />
-                <div>
+                <div className="md:col-span-2">
                   <p className="mb-1 text-sm font-medium">Correo electrónico</p>
                   <div className="flex min-h-11 items-center gap-2 rounded-lg border border-border-decor bg-surface-alt px-4 py-2 text-ink">
                     <Mail aria-hidden="true" className="h-4 w-4 shrink-0 text-text-muted" />
@@ -366,7 +366,7 @@ export default function PerfilPage() {
               </div>
             </form>
           ) : (
-            <dl className="grid gap-5 sm:grid-cols-2">
+            <dl className="grid gap-5 md:grid-cols-2">
               <div>
                 <dt className="mb-1 text-sm font-medium">Nombre completo</dt>
                 <dd className="min-h-11 rounded-lg border border-border-decor bg-surface-alt px-4 py-2">
@@ -379,14 +379,13 @@ export default function PerfilPage() {
                   @{perfil.username ?? "Sin nombre de usuario"}
                 </dd>
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <dt className="mb-1 text-sm font-medium">Correo electrónico</dt>
                 <dd className="min-h-11 rounded-lg border border-border-decor bg-surface-alt px-4 py-2">
                   <div className="flex items-center gap-2">
                     <Mail aria-hidden="true" className="h-4 w-4 shrink-0 text-text-muted" />
                     <span className="break-all">{perfil.email}</span>
                   </div>
-                  <p className="mt-1.5 text-sm text-text-muted">El correo no se puede editar.</p>
                 </dd>
               </div>
             </dl>
@@ -396,9 +395,6 @@ export default function PerfilPage() {
         {!editando && (
           <section aria-labelledby="titulo-eliminar-cuenta" className="mt-8 border-t border-border-decor pt-6">
             <h2 id="titulo-eliminar-cuenta" className="text-lg">Eliminar cuenta</h2>
-            <p className="mt-1 text-sm text-text-muted">
-              Esta acción eliminará tu cuenta y los datos asociados. No se puede deshacer.
-            </p>
             <div className="mt-4">
               <Boton variante="danger" onClick={abrirConfirmacionEliminacion}>
                 Eliminar cuenta
@@ -406,7 +402,8 @@ export default function PerfilPage() {
             </div>
           </section>
         )}
-      </article>
+        </article>
+      </div>
       <ModalConfirmacion
         abierto={confirmarEliminacion}
         titulo="¿Eliminar tu cuenta?"
