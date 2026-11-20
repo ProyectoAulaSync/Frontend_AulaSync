@@ -145,6 +145,7 @@ export default function PerfilPage() {
 
   function iniciarEdicion() {
     if (!perfil) return;
+    setConfirmarEliminacion(false);
     setValores(valoresDesdePerfil(perfil));
     setTocados(sinErrores);
     setErroresApi({});
