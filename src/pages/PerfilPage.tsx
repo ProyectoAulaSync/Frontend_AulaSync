@@ -1,15 +1,18 @@
 import { Pencil, Mail } from "lucide-react";
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import Avatar from "../components/Avatar";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
 import Cargando from "../components/Cargando";
 import EstadoError from "../components/EstadoError";
 import Mensaje from "../components/Mensaje";
+import ModalConfirmacion from "../components/ModalConfirmacion";
 import SelectorAvatar from "../components/SelectorAvatar";
 import { useAuth } from "../hooks/useAuth";
 import { useDisponibilidadUsuario } from "../hooks/useDisponibilidadUsuario";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { useToast } from "../hooks/useToast";
 import { AVATAR_INICIALES } from "../lib/avatares";
 import {
   validarApellidos,
@@ -17,7 +20,8 @@ import {
   validarNombreDeUsuario,
   validarNombres,
 } from "../lib/validaciones";
-import { actualizarMiPerfil, ApiError, type CambiosPerfil, type PerfilUsuario } from "../services/api";
+import { cerrarSesion } from "../services/auth";
+import { actualizarMiPerfil, ApiError, eliminarMiCuenta, type CambiosPerfil, type PerfilUsuario } from "../services/api";
 
 type CampoPerfil = "nombres" | "apellidos" | "username";
 type CampoErrorPerfil = CampoPerfil | "avatar";
@@ -75,6 +79,8 @@ function erroresDeApi(error: ApiError): ErroresPerfil {
 export default function PerfilPage() {
   usePageTitle("Mi perfil");
   const { estado, perfil, establecerPerfil, reintentar } = useAuth();
+  const navegar = useNavigate();
+  const { mostrarAviso } = useToast();
   const [valores, setValores] = useState<ValoresPerfil>(() => (perfil ? valoresDesdePerfil(perfil) : valorVacio));
   const [tocados, setTocados] = useState<CamposTocados>(sinErrores);
   const [erroresApi, setErroresApi] = useState<ErroresPerfil>({});
@@ -83,6 +89,9 @@ export default function PerfilPage() {
   const [guardando, setGuardando] = useState(false);
   const [avisoGuardado, setAvisoGuardado] = useState("");
   const [editando, setEditando] = useState(false);
+  const [confirmarEliminacion, setConfirmarEliminacion] = useState(false);
+  const [eliminandoCuenta, setEliminandoCuenta] = useState(false);
+  const [errorEliminacion, setErrorEliminacion] = useState<string | null>(null);
   const primerCampoRef = useRef<HTMLInputElement>(null);
   const edicionAnterior = useRef(false);
 
@@ -145,6 +154,17 @@ export default function PerfilPage() {
     setEditando(true);
   }
 
+  function abrirConfirmacionEliminacion() {
+    setErrorEliminacion(null);
+    setConfirmarEliminacion(true);
+  }
+
+  function cerrarConfirmacionEliminacion() {
+    if (eliminandoCuenta) return;
+    setErrorEliminacion(null);
+    setConfirmarEliminacion(false);
+  }
+
   function cancelar() {
     if (!perfil) return;
     setValores(valoresDesdePerfil(perfil));
@@ -192,6 +212,24 @@ export default function PerfilPage() {
     } finally {
       setGuardando(false);
     }
+  }
+
+  async function eliminarCuenta() {
+    setEliminandoCuenta(true);
+    setErrorEliminacion(null);
+    try {
+      await eliminarMiCuenta();
+    } catch {
+      setErrorEliminacion("No pudimos eliminar tu cuenta. Inténtalo de nuevo.");
+      setEliminandoCuenta(false);
+      return;
+    }
+
+    navegar("/");
+    setConfirmarEliminacion(false);
+    await cerrarSesion().catch(() => undefined);
+    mostrarAviso("Tu cuenta fue eliminada.");
+    setEliminandoCuenta(false);
   }
 
   if (estado === "cargando") return <Cargando texto="Cargando tu perfil…" />;
@@ -353,7 +391,32 @@ export default function PerfilPage() {
             </dl>
           )}
         </section>
+
+        {!editando && (
+          <section aria-labelledby="titulo-eliminar-cuenta" className="mt-8 border-t border-border-decor pt-6">
+            <h2 id="titulo-eliminar-cuenta" className="text-lg">Eliminar cuenta</h2>
+            <p className="mt-1 text-sm text-text-muted">
+              Esta acción eliminará tu cuenta y los datos asociados. No se puede deshacer.
+            </p>
+            <div className="mt-4">
+              <Boton variante="danger" onClick={abrirConfirmacionEliminacion}>
+                Eliminar cuenta
+              </Boton>
+            </div>
+          </section>
+        )}
       </article>
+      <ModalConfirmacion
+        abierto={confirmarEliminacion}
+        titulo="¿Eliminar tu cuenta?"
+        descripcion="Se eliminarán tu cuenta y los datos asociados. Esta acción no se puede deshacer."
+        error={errorEliminacion}
+        textoConfirmar="Eliminar cuenta"
+        textoConfirmando="Eliminando…"
+        confirmando={eliminandoCuenta}
+        onCerrar={cerrarConfirmacionEliminacion}
+        onConfirmar={() => void eliminarCuenta()}
+      />
     </div>
   );
 }
