@@ -101,12 +101,10 @@ export default function LoginPage() {
       <form onSubmit={enviar} noValidate className="space-y-4">
         <Campo
           id="login-correo"
-          etiqueta="Correo institucional o personal"
+          etiqueta="Correo"
           obligatorio
-          textoObligatorio
           type="email"
           autoComplete="email"
-          ayuda="Ingresa tu correo universitario o cuenta registrada."
           value={correo}
           onChange={(e) => setCorreo(e.target.value)}
           onBlur={() => setTocados((t) => ({ ...t, correo: true }))}
@@ -144,7 +142,10 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-6 text-center text-sm text-text-muted">
-        ¿No tienes cuenta? <Link to="/registro">Crear cuenta</Link>
+        ¿No tienes cuenta?{" "}
+        <Link to="/registro" className="auth-footer-link">
+          Crear cuenta
+        </Link>
       </p>
     </TarjetaFormulario>
   );

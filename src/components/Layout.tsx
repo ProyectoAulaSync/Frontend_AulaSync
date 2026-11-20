@@ -1,4 +1,4 @@
-import { BookOpen, LogOut, UserRound, Users } from "lucide-react";
+import { BookOpen, LogOut, UserRound, Users, Video } from "lucide-react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import Avatar from "./Avatar";
 import { useAuth } from "../hooks/useAuth";
@@ -65,7 +65,7 @@ export default function Layout() {
             <ul className="space-y-1">
               <li>
                 <NavLink to="/panel" className={enlaceLateral}>
-                  <Users aria-hidden="true" className="h-5 w-5" />
+                  <Video aria-hidden="true" className="h-5 w-5" />
                   Mis salas
                 </NavLink>
               </li>

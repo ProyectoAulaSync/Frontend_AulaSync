@@ -63,25 +63,30 @@ export default function PanelPage() {
     estado.error instanceof ApiError &&
     estado.error.status === 403 &&
     estado.error.code === "PROFILE_INCOMPLETE";
+  const mostrarCrearSalaArriba =
+    estado.tipo !== "listo" ||
+    mostrarCarga ||
+    estado.salas.length > 0;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8">
+    <main className="page-container bg-transparent">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <p className="font-heading text-sm font-semibold text-primary">Panel</p>
-          <h1 className="mt-1">Mis salas</h1>
+          <h1 className="text-primary">Mis salas</h1>
           <p className="mt-2 text-text-muted">
             Administre sus espacios colaborativos o acceda a salas de estudio en curso.
           </p>
         </div>
-        <Link
-          to="/salas/nueva"
-          state={{ backgroundLocation: location }}
-          className="btn btn-primary w-full shrink-0 whitespace-nowrap sm:w-auto"
-        >
-          <Plus aria-hidden="true" className="h-5 w-5" />
-          Crear sala
-        </Link>
+        {mostrarCrearSalaArriba && (
+          <Link
+            to="/salas/nueva"
+            state={{ backgroundLocation: location }}
+            className="btn btn-primary w-full shrink-0 whitespace-nowrap sm:w-auto"
+          >
+            <Plus aria-hidden="true" className="h-5 w-5" />
+            Crear sala
+          </Link>
+        )}
       </header>
 
       <div className="mt-8">

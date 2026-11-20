@@ -90,6 +90,42 @@
 }
 
 @layer components {
+  .page-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding: 2rem 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .page-container { padding-inline: 2rem; }
+  }
+
+  .auth-footer-link {
+    color: var(--color-primary-active);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .auth-footer-link:hover { text-decoration: underline; }
+
+  #editar-perfil {
+    width: 100%;
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+  #editar-perfil:hover,
+  #editar-perfil:active,
+  #editar-perfil:focus-visible {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-bg);
+  }
+  #editar-perfil:focus-visible {
+    outline-color: var(--color-ink);
+    outline-offset: 3px;
+  }
+  @media (min-width: 640px) {
+    #editar-perfil { width: auto; }
+  }
+
   .btn {
     display: inline-flex;
     align-items: center;
@@ -113,8 +149,28 @@
   /* Neutral (blanco/gris): «Cancelar», «Copiar ID», «Continuar con Google», «Reintentar» secundario */
   .btn-neutral { background: #fff; color: var(--color-ink); border: 1px solid var(--color-border-control); }
   .btn-neutral:hover { background: var(--color-surface-alt); }
-  .btn-danger { background: var(--color-error); color: #fff; }
-  .btn-danger:hover { background: var(--color-error-hover); }
+  .btn[data-modal-close] {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-ink);
+    box-shadow: none;
+    transition: color 150ms ease, background-color 150ms ease;
+  }
+  .btn[data-modal-close]:hover,
+  .btn[data-modal-close]:focus-visible {
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+  }
+  .btn-danger {
+    border: 1px solid var(--color-error-text);
+    background: var(--color-bg);
+    color: var(--color-error-text);
+  }
+  .btn-danger:hover,
+  .btn-danger:active { background: var(--color-error-bg); }
   .btn:disabled,
   .btn[aria-disabled="true"] {
     background: var(--color-disabled-bg);
