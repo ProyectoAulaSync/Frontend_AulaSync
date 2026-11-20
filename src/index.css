@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@keyframes aulasync-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Tokens de la Guía visual (Norman). Solo se usan estos colores y estas dos fuentes. */
 @theme {
   --font-heading: "Lexend", system-ui, sans-serif;
