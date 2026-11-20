@@ -1,3 +1,18 @@
+export const MATERIAS = [
+  "Matemáticas",
+  "Cálculo",
+  "Álgebra Lineal",
+  "Estadística",
+  "Física",
+  "Química",
+  "Programación",
+  "Algoritmos",
+  "Bases de datos",
+  "Redes",
+  "Inglés",
+  "Otra",
+] as const;
+
 function claveMateria(uid: string, salaId: string): string {
   return `aulasync:materia:${uid}:${salaId}`;
 }

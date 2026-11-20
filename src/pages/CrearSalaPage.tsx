@@ -1,10 +1,10 @@
-import { BookOpen } from "lucide-react";
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { useLocation, useNavigate, type Location } from "react-router-dom";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
 import Mensaje from "../components/Mensaje";
 import ModalBase from "../components/ModalBase";
+import SelectorMateria from "../components/SelectorMateria";
 import { useAuth } from "../hooks/useAuth";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useToast } from "../hooks/useToast";
@@ -31,15 +31,12 @@ export default function CrearSalaPage({ comoModal = false }: Props) {
   const [nombre, setNombre] = useState("");
   const [materia, setMateria] = useState("");
   const [nombreTocado, setNombreTocado] = useState(false);
-  const [materiaTocada, setMateriaTocada] = useState(false);
   const [intentoEnvio, setIntentoEnvio] = useState(false);
   const [errorApiNombre, setErrorApiNombre] = useState<string | null>(null);
-  const [errorMateria, setErrorMateria] = useState<string | null>(null);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [reintentar, setReintentar] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const nombreRef = useRef<HTMLInputElement>(null);
-  const materiaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (comoModal) nombreRef.current?.focus();
@@ -48,10 +45,6 @@ export default function CrearSalaPage({ comoModal = false }: Props) {
   const errorNombre =
     errorApiNombre ??
     ((nombreTocado || intentoEnvio) ? validarNombreDeSala(nombre) : null);
-  const errorMateriaVisible =
-    errorMateria ?? ((materiaTocada || intentoEnvio) && materia.trim().length > 60
-      ? "Usa máximo 60 caracteres."
-      : null);
   function volverAlPanel() {
     if (enviando) return;
     if (comoModal && locationFondo?.pathname === "/panel") {
@@ -71,7 +64,6 @@ export default function CrearSalaPage({ comoModal = false }: Props) {
 
   function cambiarMateria(valor: string) {
     setMateria(valor);
-    setErrorMateria(null);
     setErrorEnvio(null);
     setReintentar(false);
   }
@@ -80,16 +72,12 @@ export default function CrearSalaPage({ comoModal = false }: Props) {
     evento.preventDefault();
     setIntentoEnvio(true);
     setNombreTocado(true);
-    setMateriaTocada(true);
     setErrorEnvio(null);
 
     const errorNombreActual = validarNombreDeSala(nombre);
-    const errorMateriaActual = materia.trim().length > 60 ? "Usa máximo 60 caracteres." : null;
     setErrorApiNombre(null);
-    setErrorMateria(errorMateriaActual);
-    if (errorNombreActual || errorMateriaActual) {
-      if (errorNombreActual) nombreRef.current?.focus();
-      else materiaRef.current?.focus();
+    if (errorNombreActual) {
+      nombreRef.current?.focus();
       return;
     }
 
@@ -147,18 +135,7 @@ export default function CrearSalaPage({ comoModal = false }: Props) {
         onBlur={() => setNombreTocado(true)}
         error={errorNombre}
       />
-      <Campo
-        id="materia-sala"
-        ref={materiaRef}
-        etiqueta="Materia o tema principal"
-        placeholder="Ej. Matemáticas, Algoritmos, Física…"
-        ayuda="Opcional. Máximo 60 caracteres."
-        accionFinal={<BookOpen aria-hidden="true" className="h-5 w-5 text-text-muted" />}
-        value={materia}
-        onChange={(evento) => cambiarMateria(evento.target.value)}
-        onBlur={() => setMateriaTocada(true)}
-        error={errorMateriaVisible}
-      />
+      <SelectorMateria valor={materia} onCambio={cambiarMateria} />
       <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
         <Boton variante="neutral" onClick={volverAlPanel} disabled={enviando}>
           Cancelar
