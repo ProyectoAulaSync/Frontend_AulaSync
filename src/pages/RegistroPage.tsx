@@ -4,12 +4,14 @@ import Boton from "../components/Boton";
 import BotonGoogle from "../components/BotonGoogle";
 import Campo from "../components/Campo";
 import CampoContrasena from "../components/CampoContrasena";
+import Cargando from "../components/Cargando";
 import Mensaje from "../components/Mensaje";
 import SelectorAvatar from "../components/SelectorAvatar";
 import TarjetaFormulario from "../components/TarjetaFormulario";
 import { useAuth } from "../hooks/useAuth";
 import { useDisponibilidadUsuario } from "../hooks/useDisponibilidadUsuario";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { TIEMPO_MINIMO_MS } from "../lib/constantes";
 import { AVATAR_INICIALES } from "../lib/avatares";
 import {
   validarApellidos,
@@ -37,6 +39,7 @@ export default function RegistroPage() {
   const [intentado, setIntentado] = useState(false);
   const [enviando, setEnviando] = useState<"cuenta" | "google" | null>(null);
   const [fallo, setFallo] = useState<Fallo | null>(null);
+  const [cargaExitosa, setCargaExitosa] = useState(false);
   // Errores que solo conoce el servidor (correo ya registrado, usuario ocupado…), ligados al valor que los causó.
   const [rechazados, setRechazados] = useState<Partial<Record<Campos, { valor: string; mensaje: string }>>>({});
 
@@ -113,6 +116,8 @@ export default function RegistroPage() {
         password: valores.password,
       });
       // Al terminar entra a su Panel (RutaPublica lo lleva al tener el perfil).
+      setCargaExitosa(true);
+      await new Promise<void>((resolver) => window.setTimeout(resolver, TIEMPO_MINIMO_MS));
       establecerPerfil(perfil);
     } catch (error) {
       if (error instanceof ApiError) aplicarErrorDelServidor(error);
@@ -126,7 +131,10 @@ export default function RegistroPage() {
     setFallo(null);
     setEnviando("google");
     try {
-      establecerPerfil(await continuarConGoogle());
+      const perfil = await continuarConGoogle();
+      setCargaExitosa(true);
+      await new Promise<void>((resolver) => window.setTimeout(resolver, TIEMPO_MINIMO_MS));
+      establecerPerfil(perfil);
     } catch (error) {
       const tipo = error instanceof ErrorAuth && error.tipo === "cancelado" ? "info" : "error";
       setFallo({ tipo, texto: mensajeDeError(error) });
@@ -136,6 +144,8 @@ export default function RegistroPage() {
   }
 
   const exitoUsuario = disponibilidad === "disponible" && !errorVisible("username") ? "Nombre de usuario disponible." : null;
+
+  if (cargaExitosa) return <Cargando texto="Creando tu cuenta…" />;
 
   return (
     <TarjetaFormulario titulo="Crear cuenta">

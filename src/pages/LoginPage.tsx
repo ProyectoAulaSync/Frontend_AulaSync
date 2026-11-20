@@ -4,11 +4,13 @@ import Boton from "../components/Boton";
 import BotonGoogle from "../components/BotonGoogle";
 import Campo from "../components/Campo";
 import CampoContrasena from "../components/CampoContrasena";
+import Cargando from "../components/Cargando";
 import Mensaje from "../components/Mensaje";
 import type { EstadoDeNavegacion } from "../components/RutaPrivada";
 import TarjetaFormulario from "../components/TarjetaFormulario";
 import { useAuth } from "../hooks/useAuth";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { TIEMPO_MINIMO_MS } from "../lib/constantes";
 import { validarContrasenaDeIngreso, validarCorreo } from "../lib/validaciones";
 import { obtenerMiPerfil } from "../services/api";
 import { cerrarSesion, continuarConGoogle, ErrorAuth, iniciarSesionConCorreo, mensajeDeError } from "../services/auth";
@@ -26,6 +28,7 @@ export default function LoginPage() {
   const [intentado, setIntentado] = useState(false);
   const [enviando, setEnviando] = useState<"correo" | "google" | null>(null);
   const [fallo, setFallo] = useState<Fallo | null>(null);
+  const [cargaExitosa, setCargaExitosa] = useState(false);
 
   const errorCorreo = validarCorreo(correo);
   const errorContrasena = validarContrasenaDeIngreso(contrasena);
@@ -52,7 +55,10 @@ export default function LoginPage() {
     try {
       await iniciarSesionConCorreo(correo, contrasena);
       // Al tener el perfil, RutaPublica lleva a la vista pedida o al Panel.
-      establecerPerfil(await obtenerMiPerfil());
+      const perfil = await obtenerMiPerfil();
+      setCargaExitosa(true);
+      await new Promise<void>((resolver) => window.setTimeout(resolver, TIEMPO_MINIMO_MS));
+      establecerPerfil(perfil);
     } catch (error) {
       await cerrarSesion().catch(() => undefined);
       mostrarFallo(error);
@@ -66,13 +72,18 @@ export default function LoginPage() {
     setEnviando("google");
     try {
       // Si falta el nombre de usuario, RutaPublica lleva a elegirlo antes de entrar.
-      establecerPerfil(await continuarConGoogle());
+      const perfil = await continuarConGoogle();
+      setCargaExitosa(true);
+      await new Promise<void>((resolver) => window.setTimeout(resolver, TIEMPO_MINIMO_MS));
+      establecerPerfil(perfil);
     } catch (error) {
       mostrarFallo(error);
     } finally {
       setEnviando(null);
     }
   }
+
+  if (cargaExitosa) return <Cargando texto="Entrando a tu cuenta…" />;
 
   return (
     <TarjetaFormulario titulo="Iniciar sesión">

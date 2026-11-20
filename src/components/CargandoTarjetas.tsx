@@ -1,8 +1,8 @@
 // Estado «cargando» del Panel: esqueleto de tarjetas con el texto «Cargando…».
 export default function CargandoTarjetas({ cantidad = 4, texto = "Cargando…" }: { cantidad?: number; texto?: string }) {
   return (
-    <div role="status" className="w-full">
-      <div aria-hidden="true" className="motion-safe:animate-pulse">
+    <div className="w-full">
+      <div aria-hidden="true" className="motion-safe:animate-pulse motion-reduce:animate-none">
         <div className="mb-6 h-6 w-32 rounded bg-disabled-bg" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {Array.from({ length: cantidad }, (_, i) => (
@@ -17,7 +17,7 @@ export default function CargandoTarjetas({ cantidad = 4, texto = "Cargando…" }
           ))}
         </div>
       </div>
-      <p className="mt-6 text-center text-text-muted">{texto}</p>
+      <p role="status" aria-live="polite" className="mt-6 text-center font-heading font-semibold text-text-muted">{texto}</p>
     </div>
   );
 }
