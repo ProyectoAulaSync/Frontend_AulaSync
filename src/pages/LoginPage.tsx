@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import Boton from "../components/Boton";
 import BotonGoogle from "../components/BotonGoogle";
 import Campo from "../components/Campo";
@@ -86,19 +87,26 @@ export default function LoginPage() {
   if (cargaExitosa) return <Cargando texto="Entrando a tu cuenta…" />;
 
   return (
-    <TarjetaFormulario titulo="Iniciar sesión">
-      <div className="space-y-5">
+    <TarjetaFormulario
+      titulo="Iniciar sesión"
+      descripcion="Accede a tus salas colaborativas y recursos académicos de estudio."
+      antesTitulo={
+        <div className="mb-5 space-y-3">
         {aviso && <Mensaje tipo="info" titulo={aviso} />}
         {fallo && <Mensaje tipo={fallo.tipo} titulo={fallo.texto} />}
-      </div>
+        </div>
+      }
+    >
 
-      <form onSubmit={enviar} noValidate className="mt-5 space-y-4">
+      <form onSubmit={enviar} noValidate className="space-y-4">
         <Campo
           id="login-correo"
-          etiqueta="Correo electrónico"
+          etiqueta="Correo institucional o personal"
           obligatorio
+          textoObligatorio
           type="email"
           autoComplete="email"
+          ayuda="Ingresa tu correo universitario o cuenta registrada."
           value={correo}
           onChange={(e) => setCorreo(e.target.value)}
           onBlur={() => setTocados((t) => ({ ...t, correo: true }))}
@@ -115,7 +123,14 @@ export default function LoginPage() {
           error={tocados.contrasena || intentado ? errorContrasena : null}
         />
 
-        <Boton type="submit" ancho cargando={enviando === "correo"} textoCargando="Entrando…" disabled={enviando === "google"}>
+        <Boton
+          type="submit"
+          ancho
+          cargando={enviando === "correo"}
+          textoCargando="Entrando…"
+          disabled={enviando === "google"}
+          icono={<ArrowRight aria-hidden="true" className="h-5 w-5" />}
+        >
           Iniciar sesión
         </Boton>
 
@@ -129,7 +144,7 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-6 text-center text-sm text-text-muted">
-        ¿Aún no tienes cuenta? <Link to="/registro">Crear cuenta</Link>
+        ¿No tienes cuenta? <Link to="/registro">Crear cuenta</Link>
       </p>
     </TarjetaFormulario>
   );

@@ -64,7 +64,11 @@ export default function ElegirUsuarioPage() {
   if (cargaExitosa) return <Cargando texto="Entrando a tu cuenta…" />;
 
   return (
-    <TarjetaFormulario titulo="Elige tu nombre de usuario" descripcion="Es el nombre con el que te verá tu grupo." centrado>
+    <TarjetaFormulario
+      titulo="Elige tu nombre de usuario"
+      descripcion="Es el nombre con el que te verá tu grupo."
+      centrado
+    >
       {fallo && (
         <div className="mb-5">
           <Mensaje tipo="error" titulo={fallo} />
