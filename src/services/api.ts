@@ -52,18 +52,34 @@ async function peticion<T>(ruta: string, { metodo = "GET", cuerpo, conSesion = f
     if (usuario) headers.Authorization = `Bearer ${await usuario.getIdToken()}`;
   }
 
-  const respuesta = await fetch(`${API_URL}${ruta}`, {
-    method: metodo,
-    headers,
-    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
-    signal,
-  });
+  const timeoutSignal = AbortSignal.timeout(30_000);
+  const requestSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
 
-  if (!respuesta.ok) {
-    const datos = (await respuesta.json().catch(() => null)) as CuerpoError | null;
-    throw new ApiError(respuesta.status, datos?.error);
+  try {
+    const respuesta = await fetch(`${API_URL}${ruta}`, {
+      method: metodo,
+      headers,
+      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      signal: requestSignal,
+    });
+
+    if (!respuesta.ok) {
+      const datos = (await respuesta.json().catch((error: unknown) => {
+        if (signal?.aborted || timeoutSignal.aborted) throw error;
+        return null;
+      })) as CuerpoError | null;
+      throw new ApiError(respuesta.status, datos?.error);
+    }
+    const contenido = await respuesta.text();
+    if (!contenido.trim()) return undefined as T;
+    return JSON.parse(contenido) as T;
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    if (timeoutSignal.aborted) {
+      throw new ApiError(0, { code: "TIMEOUT", message: "La solicitud agotó el tiempo de espera." });
+    }
+    throw error;
   }
-  return (await respuesta.json()) as T;
 }
 
 export async function obtenerMensaje(signal?: AbortSignal): Promise<MensajeBase> {
@@ -122,4 +138,16 @@ export async function nombreDeUsuarioDisponible(username: string, signal?: Abort
 /** GET /api/users/me: perfil de la persona con sesión. 404 PROFILE_NOT_FOUND si aún no tiene perfil. */
 export function obtenerMiPerfil(signal?: AbortSignal): Promise<PerfilUsuario> {
   return peticion<PerfilUsuario>("/api/users/me", { conSesion: true, signal });
+}
+
+export type CambiosPerfil = Partial<Pick<PerfilUsuario, "nombres" | "apellidos" | "avatar" | "username" | "email">>;
+
+/** PATCH /api/users/me: actualiza el perfil y devuelve el perfil actualizado (200). */
+export function actualizarMiPerfil(cambios: CambiosPerfil, signal?: AbortSignal): Promise<PerfilUsuario> {
+  return peticion<PerfilUsuario>("/api/users/me", { metodo: "PATCH", cuerpo: cambios, conSesion: true, signal });
+}
+
+/** DELETE /api/users/me: elimina la cuenta (204 sin cuerpo). */
+export function eliminarMiCuenta(): Promise<void> {
+  return peticion<void>("/api/users/me", { metodo: "DELETE", conSesion: true });
 }
