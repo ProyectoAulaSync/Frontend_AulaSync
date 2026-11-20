@@ -2,11 +2,13 @@ import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
+import Cargando from "../components/Cargando";
 import Mensaje from "../components/Mensaje";
 import TarjetaFormulario from "../components/TarjetaFormulario";
 import { useAuth } from "../hooks/useAuth";
 import { useDisponibilidadUsuario } from "../hooks/useDisponibilidadUsuario";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { TIEMPO_MINIMO_MS } from "../lib/constantes";
 import { validarNombreDeUsuario } from "../lib/validaciones";
 import { ApiError, elegirNombreDeUsuario } from "../services/api";
 import { cerrarSesion, mensajeDeError } from "../services/auth";
@@ -23,6 +25,7 @@ export default function ElegirUsuarioPage() {
   const [guardando, setGuardando] = useState(false);
   const [rechazado, setRechazado] = useState<string | null>(null);
   const [fallo, setFallo] = useState<string | null>(null);
+  const [cargaExitosa, setCargaExitosa] = useState(false);
 
   const disponibilidad = useDisponibilidadUsuario(usuario);
   const errorFormato = validarNombreDeUsuario(usuario);
@@ -39,8 +42,11 @@ export default function ElegirUsuarioPage() {
     setFallo(null);
     setGuardando(true);
     try {
+      const perfil = await elegirNombreDeUsuario(usuario.trim());
+      setCargaExitosa(true);
+      await new Promise<void>((resolver) => window.setTimeout(resolver, TIEMPO_MINIMO_MS));
       // Al tener el perfil completo, RutaPrivada lleva al Panel.
-      establecerPerfil(await elegirNombreDeUsuario(usuario.trim()));
+      establecerPerfil(perfil);
     } catch (e) {
       if (e instanceof ApiError && e.code === "USERNAME_TAKEN") setRechazado(usuario.trim());
       else setFallo(mensajeDeError(e));
@@ -54,6 +60,8 @@ export default function ElegirUsuarioPage() {
     navegar("/");
     void cerrarSesion();
   }
+
+  if (cargaExitosa) return <Cargando texto="Entrando a tu cuenta…" />;
 
   return (
     <TarjetaFormulario titulo="Elige tu nombre de usuario" descripcion="Es el nombre con el que te verá tu grupo." centrado>

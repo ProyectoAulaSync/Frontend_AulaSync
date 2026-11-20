@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import Boton from "../components/Boton";
 import CargandoTarjetas from "../components/CargandoTarjetas";
 import EstadoError from "../components/EstadoError";
@@ -12,6 +13,18 @@ export default function PanelPage() {
   usePageTitle("Panel");
   const { perfil } = useAuth();
   const { estado, reintentar } = useSalas();
+  const [mostrarCarga, setMostrarCarga] = useState(false);
+
+  useEffect(() => {
+    if (estado.tipo !== "cargando") return;
+    const temporizador = window.setTimeout(() => setMostrarCarga(true), 300);
+    return () => window.clearTimeout(temporizador);
+  }, [estado.tipo]);
+
+  function reintentarSalas() {
+    setMostrarCarga(false);
+    reintentar();
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -19,10 +32,10 @@ export default function PanelPage() {
       {perfil && <p className="mt-1 text-text-muted">Hola, {perfil.nombres || perfil.username}.</p>}
 
       <div className="mt-8 flex min-h-72 items-center justify-center">
-        {estado.tipo === "cargando" && <CargandoTarjetas texto="Cargando tus Salas…" />}
+        {estado.tipo === "cargando" && mostrarCarga && <CargandoTarjetas texto="Cargando tus salas…" />}
 
         {estado.tipo === "error" && (
-          <EstadoError titulo="No pudimos cargar tus Salas" texto="Revisa tu conexión e inténtalo de nuevo." onReintentar={reintentar} />
+          <EstadoError titulo="No pudimos cargar tus Salas" texto="Revisa tu conexión e inténtalo de nuevo." onReintentar={reintentarSalas} />
         )}
 
         {estado.tipo === "listo" && estado.salas.length === 0 && (
