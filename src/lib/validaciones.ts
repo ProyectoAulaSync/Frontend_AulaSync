@@ -34,6 +34,13 @@ export function validarCorreo(valor: string): string | null {
   return null;
 }
 
+export function validarAvatar(valor: string | null): string | null {
+  const v = valor?.trim() ?? "";
+  if (!v) return "Elige un avatar.";
+  if (v.length > 60) return "Usa máximo 60 caracteres.";
+  return null;
+}
+
 // Política de contraseña (siempre visible bajo el campo).
 export type RequisitoContrasena = { id: string; texto: string; cumplido: boolean };
 

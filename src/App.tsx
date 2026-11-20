@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import PaginaPendiente from "./pages/PaginaPendiente";
 import PanelPage from "./pages/PanelPage";
+import PerfilPage from "./pages/PerfilPage";
 import RegistroPage from "./pages/RegistroPage";
 
 // Rutas según la tabla de «Criterios de éxito» (sección 3) y el pie de página del prototipo.
@@ -39,7 +40,7 @@ export default function App() {
               {/* Pantallas privadas: sin sesión llevan a Iniciar sesión. */}
               <Route element={<RutaPrivada />}>
                 <Route path="/panel" element={<PanelPage />} />
-                <Route path="/perfil" element={<PaginaPendiente titulo="Mi perfil" />} />
+                <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/salas/nueva" element={<PaginaPendiente titulo="Crear sala" />} />
                 <Route path="/salas/:id" element={<PaginaPendiente titulo="Sala" />} />
               </Route>
