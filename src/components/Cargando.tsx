@@ -1,14 +1,17 @@
-// Estado «cargando» de la guía: esqueleto con el texto «Cargando…», nunca una pantalla en blanco.
-// El pulso se desactiva si la persona pidió reducir el movimiento.
+import { BookOpen } from "lucide-react";
+
 export default function Cargando({ texto = "Cargando…" }: { texto?: string }) {
   return (
-    <div role="status" className="mx-auto w-full max-w-2xl px-4 py-12">
-      <div aria-hidden="true" className="space-y-4 motion-safe:animate-pulse">
-        <div className="h-6 w-32 rounded bg-disabled-bg" />
-        <div className="h-4 w-full rounded bg-surface-alt" />
-        <div className="h-4 w-2/3 rounded bg-surface-alt" />
+    <div className="flex min-h-[60vh] w-full flex-col items-center justify-center px-4 py-12">
+      <div aria-hidden="true" className="relative flex h-24 w-24 items-center justify-center">
+        <span className="motion-safe:animate-[aulasync-loader-spin_1.8s_linear_infinite] absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary motion-reduce:hidden" />
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-tint">
+          <BookOpen className="h-8 w-8 text-primary" />
+        </span>
       </div>
-      <p className="mt-6 text-center text-text-muted">{texto}</p>
+      <p role="status" aria-live="polite" className="mt-5 font-heading font-semibold text-ink">
+        {texto}
+      </p>
     </div>
   );
 }

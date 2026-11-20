@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Cargando from "./Cargando";
 import type { EstadoDeNavegacion } from "./RutaPrivada";
@@ -10,8 +11,15 @@ import { useAuth } from "../hooks/useAuth";
 export default function RutaPublica() {
   const { estado, perfil } = useAuth();
   const ubicacion = useLocation();
+  const [mostrarCarga, setMostrarCarga] = useState(false);
 
-  if (estado === "cargando") return <Cargando />;
+  useEffect(() => {
+    if (estado !== "cargando") return;
+    const temporizador = window.setTimeout(() => setMostrarCarga(true), 300);
+    return () => window.clearTimeout(temporizador);
+  }, [estado]);
+
+  if (estado === "cargando") return mostrarCarga ? <Cargando texto="Cargando tu perfil…" /> : null;
 
   if (estado === "con-sesion" && perfil) {
     if (!perfil.profileComplete) return <Navigate to="/registro/usuario" replace />;

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Cargando from "./Cargando";
 import Mensaje from "./Mensaje";
@@ -18,8 +19,20 @@ export type EstadoDeNavegacion = {
 export default function RutaPrivada({ modo = "completo" }: { modo?: "completo" | "username" }) {
   const { estado, perfil, reintentar } = useAuth();
   const ubicacion = useLocation();
+  const [mostrarCarga, setMostrarCarga] = useState(false);
 
-  if (estado === "cargando") return <Cargando />;
+  useEffect(() => {
+    if (estado !== "cargando") return;
+    const temporizador = window.setTimeout(() => setMostrarCarga(true), 300);
+    return () => window.clearTimeout(temporizador);
+  }, [estado]);
+
+  function reintentarPerfil() {
+    setMostrarCarga(false);
+    reintentar();
+  }
+
+  if (estado === "cargando") return mostrarCarga ? <Cargando texto="Cargando tu perfil…" /> : null;
 
   if (estado === "error") {
     return (
@@ -28,7 +41,7 @@ export default function RutaPrivada({ modo = "completo" }: { modo?: "completo" |
           tipo="error"
           titulo="Sin conexión"
           accion={
-            <button type="button" onClick={reintentar} className="btn btn-primary">
+            <button type="button" onClick={reintentarPerfil} className="btn btn-primary">
               Reintentar
             </button>
           }
