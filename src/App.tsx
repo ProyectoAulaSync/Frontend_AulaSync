@@ -3,6 +3,7 @@ import AuthProvider from "./context/AuthProvider";
 import ToastProvider from "./context/ToastProvider";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
+import LayoutAuth from "./components/LayoutAuth";
 import RutaPrivada from "./components/RutaPrivada";
 import RutaPublica from "./components/RutaPublica";
 import BaseTecnicaPage from "./pages/BaseTecnicaPage";
@@ -25,17 +26,18 @@ function Rutas() {
   return (
     <>
       <Routes location={locationPrincipal} key={locationPrincipal.key}>
-        <Route element={<Layout />}>
-          <Route path="/" element={<InicioPage />} />
-
+        <Route element={<LayoutAuth />}>
           <Route element={<RutaPublica />}>
             <Route path="/ingreso" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroPage />} />
           </Route>
-
           <Route element={<RutaPrivada modo="username" />}>
             <Route path="/registro/usuario" element={<ElegirUsuarioPage />} />
           </Route>
+        </Route>
+
+        <Route element={<Layout />}>
+          <Route path="/" element={<InicioPage />} />
 
           <Route element={<RutaPrivada />}>
             <Route path="/panel" element={<PanelPage />} />
