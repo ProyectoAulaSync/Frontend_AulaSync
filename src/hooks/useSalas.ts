@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { listarSalas, type Sala } from "../services/salas";
 
-type EstadoSalas = { tipo: "cargando" } | { tipo: "error" } | { tipo: "listo"; salas: Sala[] };
+type EstadoSalas =
+  | { tipo: "cargando" }
+  | { tipo: "error"; error: unknown }
+  | { tipo: "listo"; salas: Sala[] };
 
 // Estados lógicos del Panel (cargando, error, vacío = listo sin salas, éxito = listo con salas).
 export function useSalas() {
@@ -12,8 +15,8 @@ export function useSalas() {
     const controlador = new AbortController();
     listarSalas(controlador.signal)
       .then((salas) => setEstado({ tipo: "listo", salas }))
-      .catch(() => {
-        if (!controlador.signal.aborted) setEstado({ tipo: "error" });
+      .catch((error: unknown) => {
+        if (!controlador.signal.aborted) setEstado({ tipo: "error", error });
       });
     return () => controlador.abort();
   }, [intento]);
