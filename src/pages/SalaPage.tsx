@@ -1,36 +1,55 @@
-import { Link, useParams } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useRef, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Boton from "../components/Boton";
+import Campo from "../components/Campo";
 import Cargando from "../components/Cargando";
-import EstadoError from "../components/EstadoError";
+import EstadoVacio from "../components/EstadoVacio";
+import { CircleAlert, CircleCheck, Info } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { usePageTitle } from "../hooks/usePageTitle";
-import { obtenerMateria } from "../lib/materias";
-import { esAnfitrion } from "../lib/salas";
-import { ApiError } from "../services/api";
+import { conectar, desconectar } from "../services/realtime";
 import { obtenerSala } from "../services/salas";
 import type { Sala } from "../types/sala";
+import { usePageTitle } from "../hooks/usePageTitle";
+
+type Mensaje = {
+  id: string;
+  nombre: string;
+  hora: string;
+  texto: string;
+};
+
+type ChatEstado =
+  | { tipo: "cargando" }
+  | { tipo: "activo"; mensajes: Mensaje[] }
+  | { tipo: "error"; mensaje: string; mensajes: Mensaje[] }
+  | { tipo: "reconexion" }
+  | { tipo: "mensajes-vacios" };
 
 type EstadoSala =
   | { tipo: "cargando" }
   | { tipo: "error"; id: string; noEncontrada: boolean }
   | { tipo: "lista"; id: string; sala: Sala; materia: string | null };
 
+function formatearHora(fecha: Date): string {
+  const horas = fecha.getHours().toString().padStart(2, "0");
+  const minutos = fecha.getMinutes().toString().padStart(2, "0");
+  return `${horas}:${minutos}`;
+}
+
 export default function SalaPage() {
+  const tituloRef = useRef<HTMLHeadingElement>(null);
   const { id } = useParams<{ id: string }>();
   const { perfil } = useAuth();
   const uidPerfil = perfil?.uid;
-  const [estado, setEstado] = useState<EstadoSala>({ tipo: "cargando" });
-  const [intento, setIntento] = useState(0);
-  const [avisoCopiado, setAvisoCopiado] = useState("");
-  const tituloRef = useRef<HTMLHeadingElement>(null);
-  const salaCargada = estado.tipo === "lista" && estado.id === id ? estado : null;
-  const cargando =
-    Boolean(id) &&
-    (estado.tipo === "cargando" || estado.id !== id);
-  const errorActual = estado.tipo === "error" && estado.id === id ? estado : null;
+  const [estadoSala, setEstadoSala] = useState<EstadoSala>({ tipo: "cargando" });
+  const [chat, setChat] = useState<ChatEstado>({ tipo: "cargando" });
+  const [socket, setSocket] = useState<any>(null);
+  const [textoMensaje, setTextoMensaje] = useState("");
+  const mensajesRef = useRef<Mensaje[]>([]);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  usePageTitle(salaCargada?.sala.nombre ?? "Sala");
+  usePageTitle("Sala");
 
   useEffect(() => {
     if (!id) return;
@@ -38,100 +57,228 @@ export default function SalaPage() {
     const controlador = new AbortController();
     obtenerSala(id, controlador.signal)
       .then((sala) => {
-        setEstado({
+        setEstadoSala({
           tipo: "lista",
           id,
           sala,
-          materia: uidPerfil ? obtenerMateria(uidPerfil, id) : null,
+          materia: uidPerfil ? sala.nombre : null,
         });
+        setChat({ tipo: "activo", mensajes: [] });
+        setSocket(conectar());
       })
       .catch((error: unknown) => {
         if (controlador.signal.aborted) return;
-        setEstado({
+        setEstadoSala({
           tipo: "error",
           id,
-          noEncontrada: error instanceof ApiError && error.status === 404,
+          noEncontrada: error instanceof Error && error.message === "Not found",
         });
       });
-    return () => controlador.abort();
-  }, [id, intento, uidPerfil]);
+    return () => {
+      controlador.abort();
+      desconectar();
+      setSocket(null);
+    };
+  }, [id, uidPerfil]);
 
   useEffect(() => {
-    if (estado.tipo === "lista" && estado.id === id) tituloRef.current?.focus();
-  }, [estado, id]);
+    if (!socket) return;
 
-  async function copiarId() {
-    if (!salaCargada) return;
-    try {
-      await navigator.clipboard.writeText(salaCargada.sala.id);
-      setAvisoCopiado("ID copiado");
-    } catch {
-      setAvisoCopiado("No pudimos copiar el ID. Puedes seleccionarlo y copiarlo manualmente.");
+    socket.on("mensaje-nuevo", (mensaje: any) => {
+      setChat((prev) => {
+        if (prev.tipo !== "activo") return prev;
+        const actualizado = [...prev.mensajes, mensaje];
+        mensajesRef.current = actualizado;
+        return { tipo: "activo", mensajes: actualizado };
+      });
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: "instant",
+        });
+      }
+    });
+
+    socket.on("usuario-conectado", (nombre: string) => {
+      setChat((prev) => {
+        if (prev.tipo !== "activo") return prev;
+        const aviso: Mensaje = {
+          id: Date.now().toString(),
+          nombre,
+          hora: formatearHora(new Date()),
+          texto: "se unió a la sala",
+        };
+        const actualizado = [...prev.mensajes, aviso];
+        mensajesRef.current = actualizado;
+        return { tipo: "activo", mensajes: actualizado };
+      });
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: "instant",
+        });
+      }
+    });
+
+    socket.on("usuario-desconectado", (nombre: string) => {
+      setChat((prev) => {
+        if (prev.tipo !== "activo") return prev;
+        const aviso: Mensaje = {
+          id: Date.now().toString(),
+          nombre,
+          hora: formatearHora(new Date()),
+          texto: "salió de la sala",
+        };
+        const actualizado = [...prev.mensajes, aviso];
+        mensajesRef.current = actualizado;
+        return { tipo: "activo", mensajes: actualizado };
+      });
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: "instant",
+        });
+      }
+    });
+
+    socket.on("reconexion exitosa", () => {
+      setChat({ tipo: "activo", mensajes: mensajesRef.current });
+    });
+
+    socket.on("error-conexion", (err: string) => {
+      if (chat.tipo === "error") {
+        setChat({ tipo: "error", mensaje: err, mensajes: chat.mensajes });
+      } else {
+        setChat({ tipo: "error", mensaje: err, mensajes: [] });
+      }
+    });
+
+    return () => {
+      socket.off("mensaje-nuevo");
+      socket.off("usuario-conectado");
+      socket.off("usuario-desconectado");
+      socket.off("reconexion exitosa");
+      socket.off("error-conexion");
+    };
+  }, [socket, chat.tipo]);
+
+  useEffect(() => {
+    if (chat.tipo === "activo" && chat.mensajes.length === 0) {
+      setChat({ tipo: "activo", mensajes: chat.mensajes });
     }
+  }, [chat.tipo]);
+
+  if (chat.tipo === "cargando") {
+    return <Cargando texto="Cargando el chat…" />;
   }
 
-  function reintentar() {
-    setEstado({ tipo: "cargando" });
-    setAvisoCopiado("");
-    setIntento((actual) => actual + 1);
-  }
-
-  if (cargando) {
-    return <Cargando texto="Cargando la sala…" />;
-  }
-
-  if (!id || !salaCargada) {
+  if (chat.tipo === "error") {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
-        <EstadoError
-          titulo={errorActual?.noEncontrada || !id ? "No encontramos esta sala" : "No pudimos cargar esta sala"}
-          texto={
-            errorActual?.noEncontrada || !id
-              ? "Es posible que se haya eliminado o que el enlace no sea válido."
-              : "Revisa tu conexión e inténtalo de nuevo."
-          }
-          onReintentar={errorActual && !errorActual.noEncontrada ? reintentar : undefined}
-        />
-        <div className="mt-5 text-center">
-          <Link to="/panel">Volver a mis salas</Link>
-        </div>
+      <div className="mx-auto max-w-sm p-6 text-center">
+        <CircleAlert aria-hidden="true" className="mx-auto mb-4 h-12 w-12 text-error" />
+        <h2 className="mb-2 text-xl">Error en el chat</h2>
+        <p className="mb-6 text-text-muted">{chat.mensaje}</p>
+        <Boton variante="neutral" onClick={() => setChat({ tipo: "cargando" })}>
+          Reintentar
+        </Boton>
       </div>
     );
   }
 
-  const { sala, materia } = salaCargada;
-  const esLaPersonaAnfitriona = perfil ? esAnfitrion(sala, perfil.uid) : false;
+  if (chat.tipo === "reconexion") {
+    return (
+      <div className="flex min-h-[60vh] w-full flex-col items-center justify-center px-4 py-12">
+        <div className="relative flex h-24 w-24 items-center justify-center">
+          <span className="motion-safe:animate-[spin_1.8s_linear_infinite] absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary motion-reduce:hidden" />
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-tint">
+            <CircleCheck className="h-8 w-8 text-primary" />
+          </span>
+        </div>
+        <p role="status" aria-live="polite" className="mt-4 font-heading font-semibold text-ink">
+          Reconectando…
+        </p>
+      </div>
+    );
+  }
+
+  if (chat.tipo === "mensajes-vacios") {
+    return <EstadoVacio icono={<Info className="h-12 w-12 text-primary" />} titulo="Sin mensajes" texto="Aún no hay mensajes en esta sala. Sé el primero en escribir!" />;
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <Link to="/panel" className="inline-flex min-h-11 items-center">Volver a mis salas</Link>
+
       <section className="mt-5 rounded-xl border border-border-decor bg-white p-5 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 ref={tituloRef} tabIndex={-1}>{sala.nombre}</h1>
-          {esLaPersonaAnfitriona && (
-            <span className="rounded-full bg-primary-tint px-3 py-1 text-sm font-semibold text-primary">
-              Anfitrión
-            </span>
-          )}
+          <h1 ref={tituloRef} tabIndex={-1}>
+            {estadoSala.tipo === "lista" ? (estadoSala.sala?.nombre ?? "Sala") : "Sala"}
+          </h1>
         </div>
-        <div className="mt-6">
-          <p className="text-sm font-medium text-text-muted">ID de la sala</p>
-          <div className="mt-1 flex flex-wrap items-center gap-3">
-            <code className="break-all rounded bg-surface-alt px-3 py-2 text-ink">{sala.id}</code>
-            <Boton variante="neutral" onClick={() => void copiarId()}>
-              Copiar ID
-            </Boton>
+
+        <div className="mt-6 h-96 border border-border-decor rounded-lg overflow-hidden bg-surface-alt p-4 flex flex-col">
+          <div className="flex-1 overflow-y-auto" role="status" aria-live="polite">
+            {chat.tipo === "activo" && chat.mensajes.length > 0 && chat.mensajes.map((m) => (
+              <div
+                key={m.id}
+                className={`flex items-start gap-3 ${m.nombre === (perfil?.nombres ?? "") ? "order-last" : ""} ${m.nombre === (perfil?.nombres ?? "") ? "text-right" : ""}`}
+              >
+                <div
+                  className={`px-3 py-1.5 rounded text-xs ${
+                    m.nombre === (perfil?.nombres ?? "") ? "bg-primary-tint text-primary-active" : "bg-border-decor text-text-muted"
+              }`}
+                >
+                  {m.nombre}
+                </div>
+                <div className="text-xxs">
+                  <span>{m.hora}</span>
+                </div>
+                <p className={`${m.nombre === (perfil?.nombres ?? "") ? "text-primary" : "text-text-muted"} ${m.nombre === (perfil?.nombres ?? "") ? "font-medium" : ""}`}>{m.texto}</p>
+              </div>
+            ))}
           </div>
-          <p role="status" aria-live="polite" className="mt-2 min-h-6 text-sm text-success">
-            {avisoCopiado}
-          </p>
         </div>
-        {materia && (
-          <div className="mt-4 border-t border-border-decor pt-4">
-            <p className="text-sm font-medium text-text-muted">Materia o tema principal</p>
-            <p className="mt-1">{materia}</p>
-          </div>
-        )}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!textoMensaje.trim() || chat.tipo !== "activo") return;
+            const mensaje: Mensaje = {
+              id: Date.now().toString(),
+              nombre: perfil?.nombres ?? "Anónimo",
+              hora: formatearHora(new Date()),
+              texto: textoMensaje,
+            };
+            setChat((prev) => {
+              if (prev.tipo !== "activo") return prev;
+              const actualizado = [...prev.mensajes, mensaje];
+              mensajesRef.current = actualizado;
+              setTextoMensaje("");
+              if (messagesContainerRef.current) {
+                messagesContainerRef.current.scrollTo({
+                  top: messagesContainerRef.current.scrollHeight,
+                  behavior: "instant",
+                });
+              }
+              return { tipo: "activo", mensajes: actualizado };
+            });
+          }}
+          className="mt-4 flex gap-2"
+          aria-label="Enviar mensaje"
+        >
+          <Campo
+            id="mensaje"
+            etiqueta="Escribir un mensaje"
+            obligatorio={false}
+            value={textoMensaje}
+            onChange={(e) => setTextoMensaje(e.target.value)}
+            placeholder="Escribe aquí..."
+            disabled={chat.tipo !== "activo"}
+          />
+          <Boton variante="primary" disabled={chat.tipo !== "activo"}>
+            Enviar
+          </Boton>
+        </form>
       </section>
     </main>
   );
