@@ -1,5 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
-import { Plus, Users } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Hash, Plus, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Boton from "../components/Boton";
 import CargandoTarjetas from "../components/CargandoTarjetas";
@@ -18,6 +18,7 @@ export default function PanelPage() {
   usePageTitle("Mis salas");
   const { perfil } = useAuth();
   const location = useLocation();
+  const navegar = useNavigate();
   const { estado, reintentar } = useSalas();
   const [mostrarCarga, setMostrarCarga] = useState(false);
   const [avisoCopiado, setAvisoCopiado] = useState<{ salaId: string; texto: string } | null>(null);
@@ -78,14 +79,23 @@ export default function PanelPage() {
           </p>
         </div>
         {mostrarCrearSalaArriba && (
-          <Link
-            to="/salas/nueva"
-            state={{ backgroundLocation: location }}
-            className="btn btn-primary w-full shrink-0 whitespace-nowrap sm:w-auto"
-          >
-            <Plus aria-hidden="true" className="h-5 w-5" />
-            Crear sala
-          </Link>
+          <>
+            <Boton
+              variante="neutral"
+              onClick={() => navegar("/unir-sala")}
+            >
+              <Hash aria-hidden="true" className="h-5 w-5" />
+              Unirme con un ID
+            </Boton>
+            <Link
+              to="/salas/nueva"
+              state={{ backgroundLocation: location }}
+              className="btn btn-primary w-full shrink-0 whitespace-nowrap sm:w-auto ml-3 sm:ml-0"
+            >
+              <Plus aria-hidden="true" className="h-5 w-5" />
+              Crear sala
+            </Link>
+          </>
         )}
       </header>
 
