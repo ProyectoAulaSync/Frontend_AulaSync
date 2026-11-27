@@ -31,7 +31,7 @@ export default function LayoutAuth() {
 
         <div className="hidden max-w-2xl lg:block">
           <span className="inline-flex rounded-full border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
-            {esIngreso ? "Red Universitaria" : "Comunidad Académica UniValle"}
+            {esIngreso ? "Red Universitaria" : "Comunidad Académica"}
           </span>
           <p className="mt-7 max-w-xl font-heading text-4xl font-bold leading-tight xl:text-5xl">
             {esIngreso

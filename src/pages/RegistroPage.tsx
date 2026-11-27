@@ -151,7 +151,6 @@ export default function RegistroPage() {
   return (
     <TarjetaFormulario
       titulo="Crear cuenta"
-      insignia="Registro institucional"
       descripcion="Regístrate para crear y participar en salas de estudio grupales."
     >
       {fallo && <Mensaje tipo={fallo.tipo} titulo={fallo.texto} />}

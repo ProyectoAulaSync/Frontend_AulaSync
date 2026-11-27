@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
 import Cargando from "../components/Cargando";
-import { CircleAlert, CircleCheck, Home, User, LogOut, X, Edit2, Trash2, Wifi } from "lucide-react";
+import { CircleAlert, CircleCheck, Home, User, LogOut, X, Edit2, Trash2, Wifi, Send } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { esAnfitrion } from "../lib/salas";
 import { conectar, desconectar } from "../services/realtime";
@@ -378,7 +378,7 @@ export default function SalaPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="text-xs text-text-muted mb-6">
+            <p className="text-sm text-text-muted mb-6">
               ¿Estás seguro de que quieres eliminar esta sala? Esta acción no se puede deshacer.
             </p>
             <div className="flex flex-row-reverse gap-2">
@@ -408,7 +408,7 @@ export default function SalaPage() {
           </div>
           <div className="flex-none h-[1px] bg-[#E2E8F0] mx-6 my-3" />
           <div className="flex-none px-6">
-            <span className="block text-xs uppercase tracking-wider text-text-muted font-medium mb-4">
+            <span className="block text-sm uppercase tracking-wider text-text-muted font-medium mb-4">
               MENÚ PRINCIPAL
             </span>
           </div>
@@ -418,14 +418,14 @@ export default function SalaPage() {
               className="flex items-center gap-3 h-[34px] rounded-lg bg-primary-tint text-primary font-semibold px-3"
             >
               <Home className="h-4 w-4" />
-              <span className="text-sm">Mis salas</span>
+              <span className="text-base">Mis salas</span>
             </a>
             <a
               href="#"
               className="flex items-center gap-3 h-[34px] rounded-lg text-text-muted hover:bg-[#F1F5F9] hover:text-ink px-3 transition-colors"
             >
               <User className="h-4 w-4" />
-              <span className="text-sm">Mi perfil</span>
+              <span className="text-base">Mi perfil</span>
             </a>
           </nav>
           <div className="flex-1" />
@@ -435,8 +435,8 @@ export default function SalaPage() {
                 <span className="text-xs font-bold">MG</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-ink">María González</span>
-                <span className="text-xs text-text-muted">Estudiante</span>
+                <span className="text-base font-semibold text-ink">María González</span>
+                <span className="text-sm text-text-muted">Estudiante</span>
               </div>
               <span className="ml-auto text-text-muted">&gt;</span>
             </div>
@@ -444,24 +444,24 @@ export default function SalaPage() {
           <div className="flex-none px-6 pt-2 pb-6">
             <button className="flex items-center gap-2 w-full h-[34px] rounded-lg px-3 text-text-muted hover:bg-[#F1F5F9] hover:text-ink transition-colors">
               <LogOut className="h-4 w-4" />
-              <span className="text-sm">Cerrar sesión</span>
+              <span className="text-base">Cerrar sesión</span>
             </button>
           </div>
         </aside>
 
         {/* Área de contenido principal (derecha) - centrado y responsivo */}
-        <main className="flex-none pl-0 min-h-screen w-full max-w-full mx-auto px-4 lg:px-0 lg:pl-[100px] lg:pr-[100px] lg:pb-[100px]">
+        <main className="flex-none pl-0 min-h-screen w-full max-w-full mx-auto px-4 lg:px-0 lg:pl-[100px] lg:pr-[100px] lg:pb-[50px]">
           <div>
             {/* Encabezado de la sala */}
             <header className="flex-none pt-8 mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <Link to="/panel" className="flex items-center gap-1 text-sm font-medium text-ink hover:text-primary">
-                  <span className="text-[10px]">‹</span>
+                  <span className="text-sm">‹</span>
                   <span>Mis salas</span>
                 </Link>
               </div>
               <h1 className="text-2xl font-bold text-primary mb-1">{estadoSala.tipo === "lista" ? estadoSala.sala?.nombre ?? "Sala" : "Sala"}</h1>
-              <div className="flex items-center gap-2 text-sm text-text-muted">
+              <div className="flex items-center gap-2 text-base text-text-muted">
                 <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-[#10B981]" />
                 <span>3 personas conectadas · ID {estadoSala.tipo === "lista" ? estadoSala.sala?.id : ""}</span>
               </div>
@@ -490,8 +490,8 @@ export default function SalaPage() {
                 <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-0 shadow-sm flex flex-col h-full">
                   <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-sm font-semibold text-ink">Chat de la sala</h2>
-                      <p className="text-xs text-text-muted mt-0.5">Conversación visible para todos</p>
+                      <h2 className="text-base font-semibold text-ink">Chat de la sala</h2>
+                      <p className="text-sm text-text-muted mt-0.5">Conversación visible para todos</p>
                     </div>
                   </div>
 
@@ -514,10 +514,10 @@ export default function SalaPage() {
                         ) : (
                           <div className="flex flex-col items-center justify-center h-full">
                             <div className="flex-shrink-0 h-11 w-11 rounded-full bg-primary-tint flex items-center justify-center text-primary">
-                              <span className="h-6 w-6">✉</span>
+                              <Send className="h-6 w-6" aria-hidden="true" />
                             </div>
-                            <h2 className="mt-4 text-sm font-semibold text-ink">Aún no hay mensajes</h2>
-                            <p className="mt-1 text-xs text-text-muted">Escribe el primero.</p>
+                            <h2 className="mt-4 text-base font-semibold text-ink">Aún no hay mensajes</h2>
+                            <p className="mt-1 text-sm text-text-muted">Escribe el primero.</p>
                           </div>
                         )}
                       </>
@@ -527,8 +527,8 @@ export default function SalaPage() {
                         <div className="flex-shrink-0 h-11 w-11 rounded-full border-2 border-error-bg flex items-center justify-center text-error">
                           <span className="h-6 w-6">!</span>
                         </div>
-                        <h2 className="mt-4 text-sm font-semibold text-ink">Se interrumpió la conexión</h2>
-                        <p className="mt-2 text-xs text-text-muted max-w-[230px] text-center">Tus mensajes están guardados. Intenta conectarte de nuevo.</p>
+                        <h2 className="mt-4 text-base font-semibold text-ink">Se interrumpió la conexión</h2>
+                        <p className="mt-2 text-sm text-text-muted max-w-[230px] text-center">Tus mensajes están guardados. Intenta conectarte de nuevo.</p>
                         <div className="mt-6">
                           <Boton variante="neutral" onClick={() => setChat({ tipo: "cargando" })}>
                             <span className="flex items-center gap-1">
@@ -542,10 +542,10 @@ export default function SalaPage() {
                     {esChatVacio && (
                       <div className="flex flex-col items-center justify-center h-full">
                         <div className="flex-shrink-0 h-11 w-11 rounded-full bg-primary-tint flex items-center justify-center text-primary">
-                          <span className="h-6 w-6">✉</span>
+                          <Send className="h-6 w-6" aria-hidden="true" />
                         </div>
-                        <h2 className="mt-4 text-sm font-semibold text-ink">Aún no hay mensajes</h2>
-                        <p className="mt-1 text-xs text-text-muted">Escribe el primero.</p>
+                            <h2 className="mt-4 text-base font-semibold text-ink">Aún no hay mensajes</h2>
+                            <p className="mt-1 text-sm text-text-muted">Escribe el primero.</p>
                       </div>
                     )}
                   </div>
@@ -579,7 +579,7 @@ export default function SalaPage() {
                         </span>
                       </Boton>
                     </form>
-                    <p className="text-xs text-text-muted mt-2">Presiona Enter para enviar.</p>
+                    <p className="text-sm text-text-muted mt-2">Presiona Enter para enviar.</p>
                   </div>
                 </section>
               </div>
@@ -589,8 +589,8 @@ export default function SalaPage() {
                 {/* 1) Participantes */}
                 <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm flex flex-col">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-semibold text-ink">Participantes</h2>
-                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-tint flex items-center justify-center text-primary text-xs font-bold">
+                    <h2 className="text-base font-semibold text-ink">Participantes</h2>
+                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-tint flex items-center justify-center text-primary text-sm font-bold">
                       3
                     </span>
                   </div>
@@ -601,12 +601,12 @@ export default function SalaPage() {
                       { iniciales: "JL", nombre: "Juan López", rol: "Participante" },
                     ].map((p) => (
                       <div key={p.iniciales} className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-xs font-bold text-text-muted">
+                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-sm font-bold text-text-muted">
                           {p.iniciales}
                         </div>
                         <div className="flex-1 flex flex-col min-w-0">
-                          <span className="text-xs font-semibold text-ink truncate">{p.nombre}</span>
-                          <span className="text-xs text-text-muted truncate">{p.rol}</span>
+                          <span className="text-base font-semibold text-ink truncate">{p.nombre}</span>
+                          <span className="text-sm text-text-muted truncate">{p.rol}</span>
                         </div>
                         <span className="flex-shrink-0 h-2 w-2 rounded-full bg-[#10B981]" />
                       </div>
@@ -618,17 +618,15 @@ export default function SalaPage() {
                 {esLaPersonaAnfitriona && (
                   <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm flex flex-col">
                     <div>
-                      <h2 className="text-sm font-semibold text-ink">Acciones del anfitrión</h2>
-                      <p className="text-xs text-text-muted mt-0.5">Solo tú puedes cambiar o eliminar esta sala.</p>
+                      <h2 className="text-base font-semibold text-ink">Acciones del anfitrión</h2>
+                      <p className="text-sm text-text-muted mt-0.5">Solo tú puedes cambiar o eliminar esta sala.</p>
                     </div>
                     <div className="mt-4 flex flex-col gap-1.5">
-                      <Boton variante="neutral" onClick={abrirModalEdicion}>
-                        <span className="h-4 w-4"><Edit2 /></span>
-                        <span>Editar nombre</span>
+                      <Boton variante="neutral" icono={<Edit2 className="h-4 w-4" aria-hidden="true" />} onClick={abrirModalEdicion}>
+                        Editar nombre
                       </Boton>
-                      <Boton variante="neutral" onClick={() => setMostrarConfirmacionEliminar(true)}>
-                        <span className="h-4 w-4"><Trash2 /></span>
-                        <span>Eliminar sala</span>
+                      <Boton variante="neutral" icono={<Trash2 className="h-4 w-4" aria-hidden="true" />} onClick={() => setMostrarConfirmacionEliminar(true)}>
+                        Eliminar sala
                       </Boton>
                     </div>
                   </section>
@@ -637,8 +635,8 @@ export default function SalaPage() {
                 {/* 3) Salir de la sala */}
                 <section className="flex-none rounded-lg border border-[#FBCFE8] bg-[#FFF1F2] p-6 shadow-sm flex flex-col">
                   <div>
-                    <h2 className="text-sm font-semibold text-ink">Salir de la sala</h2>
-                    <p className="text-xs text-text-muted mt-0.5">Podrás volver a entrar mientras la sala exista.</p>
+                    <h2 className="text-base font-semibold text-ink">Salir de la sala</h2>
+                    <p className="text-sm text-text-muted mt-0.5">Podrás volver a entrar mientras la sala exista.</p>
                   </div>
                   <div className="mt-4">
                     <Boton variante="neutral" onClick={salirDeSala}>
@@ -652,13 +650,6 @@ export default function SalaPage() {
           </div>
         </main>
 
-        {/* Botón flotante de ayuda (esquina inferior derecha) */}
-        <button
-          className="fixed bottom-[32px] right-[32px] z-50 h-[32px] w-[32px] rounded-full bg-black flex items-center justify-center text-white text-xs font-bold shadow-lg hover:bg-[#666] transition-colors"
-          aria-label="Ayuda"
-        >
-          <span className="text-[14px]">?</span>
-        </button>
       </div>
     </>
   );

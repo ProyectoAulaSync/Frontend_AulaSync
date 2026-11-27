@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Hash, Plus, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Boton from "../components/Boton";
 import CargandoTarjetas from "../components/CargandoTarjetas";
+import MenuOpciones from "../components/MenuOpciones";
 import EstadoError from "../components/EstadoError";
 import EstadoVacio from "../components/EstadoVacio";
 import Mensaje from "../components/Mensaje";
@@ -70,7 +71,7 @@ export default function PanelPage() {
     estado.salas.length > 0;
 
   return (
-    <main className="page-container bg-transparent">
+    <main className="page-container">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <h1 className="text-primary">Mis salas</h1>
@@ -84,7 +85,6 @@ export default function PanelPage() {
               variante="neutral"
               onClick={() => navegar("/unir-sala")}
             >
-              <Hash aria-hidden="true" className="h-5 w-5" />
               Unirme con un ID
             </Boton>
             <Link
@@ -152,8 +152,22 @@ export default function PanelPage() {
               return (
                 <li
                   key={sala.id}
-                  className="flex min-w-0 flex-col rounded-xl border border-border-decor bg-white p-5 shadow-sm"
+                  className="relative flex min-w-0 flex-col rounded-xl border border-border-decor bg-white p-5 shadow-sm"
                 >
+                  <div className="absolute top-4 right-4">
+                    <MenuOpciones
+                      opciones={[
+                        {
+                          texto: "Copiar ID",
+                          onClick: () => void copiarId(sala.id),
+                        },
+                        {
+                          texto: "Entrar",
+                          onClick: () => navegar(`/salas/${encodeURIComponent(sala.id)}`),
+                        },
+                      ]}
+                    />
+                  </div>
                   {esPropietario && (
                     <span className="mb-3 w-fit rounded-full bg-primary-tint px-3 py-1 text-sm font-semibold text-primary-active">
                       Anfitrión
@@ -169,14 +183,6 @@ export default function PanelPage() {
                   >
                     {aviso}
                   </p>
-                  <div className="mt-auto flex flex-wrap gap-3 pt-2">
-                    <Boton variante="neutral" onClick={() => void copiarId(sala.id)}>
-                      Copiar ID
-                    </Boton>
-                    <Link to={`/salas/${encodeURIComponent(sala.id)}`} className="btn btn-neutral">
-                      Entrar
-                    </Link>
-                  </div>
                 </li>
               );
             })}

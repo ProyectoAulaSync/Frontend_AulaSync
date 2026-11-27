@@ -260,8 +260,7 @@ export default function PerfilPage() {
 
   return (
     <div className="page-container">
-      <div className="mx-auto w-full max-w-[46rem]">
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-primary">Mi perfil</h1>
             <p className="mt-2 text-text-muted">Administra tu información personal.</p>
@@ -403,7 +402,6 @@ export default function PerfilPage() {
           </section>
         )}
         </article>
-      </div>
       <ModalConfirmacion
         abierto={confirmarEliminacion}
         titulo="¿Eliminar tu cuenta?"
