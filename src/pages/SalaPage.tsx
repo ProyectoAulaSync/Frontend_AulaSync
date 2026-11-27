@@ -13,6 +13,7 @@ import { obtenerHistorialMensajes } from "../services/api";
 import type { Sala } from "../types/sala";
 import { usePageTitle } from "../hooks/usePageTitle";
 import EstadoVacio from "../components/EstadoVacio";
+import { useToast } from "../hooks/useToast";
 
 type Mensaje = {
   id: string;
@@ -57,6 +58,8 @@ export default function SalaPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   usePageTitle("Sala");
+
+  const { mostrarAviso } = useToast();
 
   useEffect(() => {
     if (!id) return;
@@ -166,6 +169,14 @@ export default function SalaPage() {
 
     socketInstance.on("reconexion exitosa", () => {
       setChat({ tipo: "activo", mensajes: mensajesRef.current });
+      mostrarAviso("Conexión restablecida. Has vuelto a la sala.", "exito");
+    });
+
+    socketInstance.on("sala-eliminada", () => {
+      setMostrarConfirmacionEliminar(false);
+      setMostrarModalEdicion(false);
+      mostrarAviso("La sala ha sido eliminada por el anfitrión.", "info");
+      navigate("/panel");
     });
 
     socketInstance.on("error-conexion", (err: string) => {
@@ -205,8 +216,8 @@ export default function SalaPage() {
     return (
       <div className="mx-auto max-w-sm p-6 text-center">
         <CircleAlert aria-hidden="true" className="mx-auto mb-4 h-12 w-12 text-error" />
-        <h2 className="mb-2 text-xl">Error en el chat</h2>
-        <p className="mb-6 text-text-muted">{chat.mensaje}</p>
+        <h2 className="mb-2 text-xl font-semibold text-ink">Error en el chat</h2>
+        <p className="mb-6 text-sm text-text-muted">{chat.mensaje}</p>
         <Boton variante="neutral" onClick={() => setChat({ tipo: "cargando" })}>
           Reintentar
         </Boton>
@@ -223,7 +234,7 @@ export default function SalaPage() {
             <CircleCheck className="h-8 w-8 text-primary" />
           </span>
         </div>
-        <p role="status" aria-live="polite" className="mt-4 font-heading font-semibold text-ink">
+        <p role="status" aria-live="polite" className="mt-4 text-sm font-semibold text-ink">
           Reconectando…
         </p>
       </div>
@@ -359,7 +370,7 @@ export default function SalaPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="text-text-muted mb-6">
+            <p className="text-sm text-text-muted mb-6">
               ¿Estás seguro de que quieres eliminar esta sala? Esta acción no se puede deshacer.
             </p>
             <div className="flex flex-row-reverse gap-2">
@@ -384,12 +395,12 @@ export default function SalaPage() {
               <div className="flex-shrink-0 h-8 w-8 rounded-md bg-primary flex items-center justify-center text-white font-bold text-lg">
                 <Home className="h-4 w-4" />
               </div>
-              <h1 className="font-bold text-ink text-xl">AulaSync</h1>
+              <h1 className="font-bold text-primary text-xl">AulaSync</h1>
             </div>
           </div>
           <div className="flex-none h-[1px] bg-[#E2E8F0] mx-6 my-3" />
           <div className="flex-none px-6">
-            <span className="block text-[10px] uppercase tracking-wider text-text-muted font-medium mb-4">
+            <span className="block text-xs uppercase tracking-wider text-text-muted font-medium mb-4">
               MENÚ PRINCIPAL
             </span>
           </div>
@@ -416,8 +427,8 @@ export default function SalaPage() {
                 <span className="text-xs font-bold">MG</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-ink">María González</span>
-                <span className="text-[10px] text-text-muted">Estudiante</span>
+                <span className="text-sm font-semibold text-ink">María González</span>
+                <span className="text-xs text-text-muted">Estudiante</span>
               </div>
               <span className="ml-auto text-text-muted">&gt;</span>
             </div>
@@ -431,18 +442,18 @@ export default function SalaPage() {
         </aside>
 
         {/* Área de contenido principal (derecha) - centrado y responsivo */}
-        <main className="flex-none pl-[228px] min-h-screen w-full max-w-full mx-auto px-4 lg:px-0 lg:pl-[228px]">
-          <div className="max-w-[1300px] mx-auto">
+        <main className="flex-none pl-0 min-h-screen w-full max-w-full mx-auto px-4 lg:pl-[100px] lg:pr-[100px] lg:pb-[100px]">
+          <div>
             {/* Encabezado de la sala */}
             <header className="flex-none pt-8 mb-6">
               <div className="flex items-center gap-2 mb-2">
-                <Link to="/panel" className="flex items-center gap-1 text-[12px] font-medium text-ink hover:text-primary">
+                <Link to="/panel" className="flex items-center gap-1 text-sm font-medium text-ink hover:text-primary">
                   <span className="text-[10px]">‹</span>
                   <span>Mis salas</span>
                 </Link>
               </div>
-              <h1 className="text-[28px] font-bold text-ink mb-1">{estadoSala.tipo === "lista" ? estadoSala.sala?.nombre ?? "Sala" : "Sala"}</h1>
-              <div className="flex items-center gap-2 text-text-muted text-sm">
+              <h1 className="text-2xl font-bold text-primary mb-1">{estadoSala.tipo === "lista" ? estadoSala.sala?.nombre ?? "Sala" : "Sala"}</h1>
+              <div className="flex items-center gap-2 text-sm text-text-muted">
                 <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-[#10B981]" />
                 <span>3 personas conectadas · ID {estadoSala.tipo === "lista" ? estadoSala.sala?.id : ""}</span>
               </div>
@@ -452,14 +463,14 @@ export default function SalaPage() {
             <div className="flex-none h-[1px] bg-[#E2E8F0] mb-6" />
 
             {/* Contenido: dos columnas en desktop, apiladas en móvil */}
-            <div className="grid grid-cols-1 lg:grid-cols-[665px_265px] gap-[18px]">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_265px] gap-[18px]">
               {/* Columna izquierda: Chat */}
               <div className="flex flex-col h-[calc(100vh-176px)] lg:h-auto min-h-[500px]">
                 <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-0 shadow-sm flex flex-col h-full">
                   <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-start justify-between gap-3">
                     <div>
                       <h2 className="text-sm font-semibold text-ink">Chat de la sala</h2>
-                      <p className="text-[11px] text-text-muted mt-0.5">Conversación visible para todos</p>
+                      <p className="text-xs text-text-muted mt-0.5">Conversación visible para todos</p>
                     </div>
                   </div>
 
@@ -467,10 +478,10 @@ export default function SalaPage() {
                     {chat.tipo === "activo" && chat.mensajes.length > 0 && chat.mensajes.map((m) => (
                       <div key={m.id} className={`mb-3 flex flex-col ${m.nombre === (perfil?.nombres ?? "") ? "flex-row-reverse" : "flex-row"}`}>
                         <div className={`flex items-baseline gap-1 ${m.nombre === (perfil?.nombres ?? "") ? "justify-end text-right" : "justify-start text-left"} mb-0.5`}>
-                          <span className={`text-[10px] font-semibold ${m.nombre === (perfil?.nombres ?? "") ? "text-ink" : "text-text-muted"}`}>
+                          <span className={`text-xs font-semibold ${m.nombre === (perfil?.nombres ?? "") ? "text-ink" : "text-text-muted"}`}>
                             {m.nombre === (perfil?.nombres ?? "") ? "Tú" : m.nombre}
                           </span>
-                          <span className="text-[10px] text-text-muted">{m.hora}</span>
+                          <span className="text-xs text-text-muted">{m.hora}</span>
                         </div>
                         <p className={`max-w-[80%] rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${m.nombre === (perfil?.nombres ?? "") ? "bg-primary text-white" : "bg-[#F1F4F8] text-text-muted"}`}>
                           {m.texto}
@@ -498,6 +509,7 @@ export default function SalaPage() {
                       <Boton
                         variante="primary"
                         disabled={chat.tipo !== "activo" || !textoMensaje.trim()}
+                        type="submit"
                       >
                         <span className="flex items-center gap-1">
                           <span className="h-4 w-4">✈</span>
@@ -505,7 +517,7 @@ export default function SalaPage() {
                         </span>
                       </Boton>
                     </form>
-                    <p className="text-[11px] text-text-muted mt-2">Presiona Enter para enviar.</p>
+                    <p className="text-xs text-text-muted mt-2">Presiona Enter para enviar.</p>
                   </div>
                 </section>
               </div>
@@ -516,7 +528,7 @@ export default function SalaPage() {
                 <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm flex flex-col">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-sm font-semibold text-ink">Participantes</h2>
-                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-tint flex items-center justify-center text-primary text-[10px] font-bold">
+                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-tint flex items-center justify-center text-primary text-xs font-bold">
                       3
                     </span>
                   </div>
@@ -527,12 +539,12 @@ export default function SalaPage() {
                       { iniciales: "JL", nombre: "Juan López", rol: "Participante" },
                     ].map((p) => (
                       <div key={p.iniciales} className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-[10px] font-bold text-text-muted">
+                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-xs font-bold text-text-muted">
                           {p.iniciales}
                         </div>
                         <div className="flex-1 flex flex-col min-w-0">
                           <span className="text-xs font-semibold text-ink truncate">{p.nombre}</span>
-                          <span className="text-[10px] text-text-muted truncate">{p.rol}</span>
+                          <span className="text-xs text-text-muted truncate">{p.rol}</span>
                         </div>
                         <span className="flex-shrink-0 h-2 w-2 rounded-full bg-[#10B981]" />
                       </div>
@@ -545,7 +557,7 @@ export default function SalaPage() {
                   <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm flex flex-col">
                     <div>
                       <h2 className="text-sm font-semibold text-ink">Acciones del anfitrión</h2>
-                      <p className="text-[11px] text-text-muted mt-0.5">Solo tú puedes cambiar o eliminar esta sala.</p>
+                      <p className="text-xs text-text-muted mt-0.5">Solo tú puedes cambiar o eliminar esta sala.</p>
                     </div>
                     <div className="mt-4 flex flex-col gap-1.5">
                       <Boton variante="neutral" onClick={abrirModalEdicion}>
@@ -564,7 +576,7 @@ export default function SalaPage() {
                 <section className="flex-none rounded-lg border border-[#FBCFE8] bg-[#FFF1F2] p-6 shadow-sm flex flex-col">
                   <div>
                     <h2 className="text-sm font-semibold text-ink">Salir de la sala</h2>
-                    <p className="text-[11px] text-text-muted mt-0.5">Podrás volver a entrar mientras la sala exista.</p>
+                    <p className="text-xs text-text-muted mt-0.5">Podrás volver a entrar mientras la sala exista.</p>
                   </div>
                   <div className="mt-4">
                     <Boton variante="neutral" onClick={salirDeSala}>
