@@ -31,8 +31,8 @@ function Rutas() {
           <Route element={<RutaPublica />}>
             <Route path="/ingreso" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroPage />} />
-            <Route path="/unir-sala" element={<UnirseASalaPage />} />
           </Route>
+          <Route path="/unir-sala" element={<UnirseASalaPage />} />
           <Route element={<RutaPrivada modo="username" />}>
             <Route path="/registro/usuario" element={<ElegirUsuarioPage />} />
           </Route>
