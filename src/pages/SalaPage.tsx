@@ -14,20 +14,21 @@ import type { Sala } from "../types/sala";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useToast } from "../hooks/useToast";
 import SkeletonMensajes from "../components/SkeletonMensaje";
+import MensajeChat from "../components/MensajeChat";
 
-type Mensaje = {
+type ChatEstado =
+  | { tipo: "cargando" }
+  | { tipo: "activo"; mensajes: MensajeChatData[] }
+  | { tipo: "error"; mensaje: string; mensajes: MensajeChatData[] }
+  | { tipo: "reconexion"; mensajes: MensajeChatData[] }
+  | { tipo: "mensajes-vacios" };
+
+type MensajeChatData = {
   id: string;
   nombre: string;
   hora: string;
   texto: string;
 };
-
-type ChatEstado =
-  | { tipo: "cargando" }
-  | { tipo: "activo"; mensajes: Mensaje[] }
-  | { tipo: "error"; mensaje: string; mensajes: Mensaje[] }
-  | { tipo: "reconexion"; mensajes: Mensaje[] }
-  | { tipo: "mensajes-vacios" };
 
 type EstadoSala =
   | { tipo: "cargando" }
@@ -54,7 +55,7 @@ export default function SalaPage() {
   const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const [editando, setEditando] = useState(false);
-  const mensajesRef = useRef<Mensaje[]>([]);
+  const mensajesRef = useRef<MensajeChatData[]>([]);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   usePageTitle("Sala");
@@ -94,7 +95,7 @@ export default function SalaPage() {
     if (estadoSala.tipo !== "lista" || !estadoSala.sala) return;
 
     obtenerHistorialMensajes(id!).then((mensajesBackend) => {
-      const mensajes: Mensaje[] = mensajesBackend.map((m) => ({
+      const mensajes: MensajeChatData[] = mensajesBackend.map((m) => ({
         id: m.id,
         nombre: m.autorNombre,
         hora: formatearHora(new Date(m.creadoEn)),
@@ -128,7 +129,7 @@ export default function SalaPage() {
     socketInstance.on("usuario-conectado", (nombre: string) => {
       setChat((prev) => {
         if (prev.tipo !== "activo") return prev;
-        const aviso: Mensaje = {
+        const aviso: MensajeChatData = {
           id: Date.now().toString(),
           nombre,
           hora: formatearHora(new Date()),
@@ -149,7 +150,7 @@ export default function SalaPage() {
     socketInstance.on("usuario-desconectado", (nombre: string) => {
       setChat((prev) => {
         if (prev.tipo !== "activo") return prev;
-        const aviso: Mensaje = {
+        const aviso: MensajeChatData = {
           id: Date.now().toString(),
           nombre,
           hora: formatearHora(new Date()),
@@ -251,7 +252,7 @@ export default function SalaPage() {
   const esChatError = esTipoChat(chat.tipo, "error");
   const esReconexion = esTipoChat(chat.tipo, "reconexion");
 
-  const mensajesParaMostrar = esChatActivo ? (chat as { tipo: "activo" | "reconexion"; mensajes: Mensaje[] }).mensajes : [];
+  const mensajesParaMostrar = esChatActivo ? (chat as { tipo: "activo" | "reconexion"; mensajes: MensajeChatData[] }).mensajes : [];
 
   const abrirModalEdicion = () => {
     setNombreEdit(sala?.nombre ?? "");
@@ -261,7 +262,7 @@ export default function SalaPage() {
   const manejarEdicion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!textoMensaje.trim() || chat.tipo !== "activo") return;
-    const mensaje: Mensaje = {
+    const mensaje: MensajeChatData = {
       id: Date.now().toString(),
       nombre: perfil?.nombres ?? "Anónimo",
       hora: formatearHora(new Date()),
@@ -325,7 +326,6 @@ export default function SalaPage() {
     navigate("/panel");
   };
 
-  // Determinar si es anfitrión
   const esLaPersonaAnfitriona = uidPerfil && estadoSala.tipo === "lista" && estadoSala.sala ? esAnfitrion(estadoSala.sala, uidPerfil) : false;
 
   return (
@@ -476,7 +476,7 @@ export default function SalaPage() {
                 <div className="flex items-start gap-3">
                   <Wifi className="h-4 w-4 flex-shrink-0 text-primary" />
                   <div>
-                    <h3 className="text-xs font-semibold text-ink">Reconectando...</h3>
+                    <h3 className="text-xs font-semibold text-ink">Reconectando…</h3>
                     <p className="text-xs text-primary">Conservaremos tus mensajes mientras recuperamos la conexión.</p>
                   </div>
                 </div>
@@ -503,17 +503,13 @@ export default function SalaPage() {
                       <>
                         {mensajesParaMostrar.length > 0 ? (
                           mensajesParaMostrar.map((m) => (
-                            <div key={m.id} className={`mb-3 flex flex-col ${m.nombre === (perfil?.nombres ?? "") ? "flex-row-reverse" : "flex-row"}`}>
-                              <div className={`flex items-baseline gap-1 ${m.nombre === (perfil?.nombres ?? "") ? "justify-end text-right" : "justify-start text-left"} mb-0.5`}>
-                                <span className={`text-xs font-semibold ${m.nombre === (perfil?.nombres ?? "") ? "text-ink" : "text-text-muted"}`}>
-                                  {m.nombre === (perfil?.nombres ?? "") ? "Tú" : m.nombre}
-                                </span>
-                                <span className="text-xs text-text-muted">{m.hora}</span>
-                              </div>
-                              <p className={`max-w-[80%] rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${m.nombre === (perfil?.nombres ?? "") ? "bg-primary text-white" : "bg-[#F1F4F8] text-text-muted"}`}>
-                                {m.texto}
-                              </p>
-                            </div>
+                            <MensajeChat
+                            key={m.id}
+                            texto={m.texto}
+                            nombre={m.nombre}
+                            hora={m.hora}
+                            esPropio={m.nombre === (perfil?.nombres ?? "")}
+                          />
                           ))
                         ) : (
                           <div className="flex flex-col items-center justify-center h-full">
