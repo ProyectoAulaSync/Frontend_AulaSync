@@ -504,12 +504,12 @@ export default function SalaPage() {
                         {mensajesParaMostrar.length > 0 ? (
                           mensajesParaMostrar.map((m) => (
                             <MensajeChat
-                            key={m.id}
-                            texto={m.texto}
-                            nombre={m.nombre}
-                            hora={m.hora}
-                            esPropio={m.nombre === (perfil?.nombres ?? "")}
-                          />
+                              key={m.id}
+                              texto={m.texto}
+                              nombre={m.nombre}
+                              hora={m.hora}
+                              esPropio={m.nombre === (perfil?.nombres ?? "")}
+                            />
                           ))
                         ) : (
                           <div className="flex flex-col items-center justify-center h-full">
@@ -556,16 +556,18 @@ export default function SalaPage() {
                       className="flex items-end gap-2"
                       aria-label="Enviar mensaje"
                     >
-                      <Campo
-                        id="mensaje"
-                        etiqueta=""
-                        obligatorio={false}
-                        value={textoMensaje}
-                        onChange={(e) => setTextoMensaje(e.target.value)}
-                        placeholder="Escribe un mensaje"
-                        disabled={chat.tipo !== "activo"}
-                        etiquetaOculta
-                      />
+                      <div className="flex-1">
+                        <Campo
+                          id="mensaje"
+                          etiqueta=""
+                          obligatorio={false}
+                          value={textoMensaje}
+                          onChange={(e) => setTextoMensaje(e.target.value)}
+                          placeholder="Escribe un mensaje"
+                          disabled={chat.tipo !== "activo"}
+                          etiquetaOculta
+                        />
+                      </div>
                       <Boton
                         variante="primary"
                         disabled={chat.tipo !== "activo" || !textoMensaje.trim()}
