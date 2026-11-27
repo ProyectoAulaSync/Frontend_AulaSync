@@ -9,6 +9,7 @@ import { CircleAlert, CircleCheck, Info } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { conectar, desconectar } from "../services/realtime";
 import { obtenerSala } from "../services/salas";
+import { obtenerHistorialMensajes } from "../services/api";
 import type { Sala } from "../types/sala";
 import { usePageTitle } from "../hooks/usePageTitle";
 
@@ -64,6 +65,15 @@ export default function SalaPage() {
           materia: uidPerfil ? sala.nombre : null,
         });
         setChat({ tipo: "activo", mensajes: [] });
+        obtenerHistorialMensajes(id).then((mensajesBackend) => {
+          const mensajes: Mensaje[] = mensajesBackend.map((m) => ({
+            id: m.id,
+            nombre: m.autorNombre,
+            hora: formatearHora(new Date(m.creadoEn)),
+            texto: m.texto,
+          }));
+          setChat({ tipo: "activo", mensajes });
+        });
         setSocket(conectar());
       })
       .catch((error: unknown) => {

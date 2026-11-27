@@ -7,6 +7,25 @@ const API_URL: string = import.meta.env.VITE_API_URL ?? "";
 // Los campos concretos dependen del documento en Firestore, por eso el tipo es abierto.
 export type MensajeBase = { id: string } & Record<string, unknown>;
 
+/** Respuesta del backend al obtener el historial de mensajes. */
+type HistorialBackend = {
+  id: string;
+  autorNombre: string;
+  creadoEn: string;
+  texto: string;
+};
+
+/** Contrato: GET /api/rooms/:roomId/messages?limit=20&before=abc123 */
+export async function obtenerHistorialMensajes(
+  roomId: string,
+  signal?: AbortSignal
+): Promise<HistorialBackend[]> {
+  return peticion<HistorialBackend[]>(
+    `/api/rooms/${roomId}/messages?limit=50`,
+    { signal }
+  );
+}
+
 /** Cuerpo de error que devuelve el backend: { error: { code, message, field?, fields? } } */
 type CuerpoError = {
   error?: {
