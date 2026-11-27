@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
 import Cargando from "../components/Cargando";
-import { CircleAlert, CircleCheck, Info, Home, User, LogOut, X, Edit2, Trash2 } from "lucide-react";
+import { CircleAlert, CircleCheck, Home, User, LogOut, X, Edit2, Trash2, Wifi } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { esAnfitrion } from "../lib/salas";
 import { conectar, desconectar } from "../services/realtime";
@@ -12,8 +12,8 @@ import { obtenerSala, actualizarSala, eliminarSala } from "../services/salas";
 import { obtenerHistorialMensajes } from "../services/api";
 import type { Sala } from "../types/sala";
 import { usePageTitle } from "../hooks/usePageTitle";
-import EstadoVacio from "../components/EstadoVacio";
 import { useToast } from "../hooks/useToast";
+import SkeletonMensajes from "../components/SkeletonMensaje";
 
 type Mensaje = {
   id: string;
@@ -26,7 +26,7 @@ type ChatEstado =
   | { tipo: "cargando" }
   | { tipo: "activo"; mensajes: Mensaje[] }
   | { tipo: "error"; mensaje: string; mensajes: Mensaje[] }
-  | { tipo: "reconexion" }
+  | { tipo: "reconexion"; mensajes: Mensaje[] }
   | { tipo: "mensajes-vacios" };
 
 type EstadoSala =
@@ -197,8 +197,9 @@ export default function SalaPage() {
       socketInstance.off("usuario-desconectado");
       socketInstance.off("reconexion exitosa");
       socketInstance.off("error-conexion");
+      socketInstance.off("sala-eliminada");
     };
-  }, [socket]);
+  }, [socket, mostrarAviso, navigate]);
 
   useEffect(() => {
     if (chat.tipo === "activo") {
@@ -241,11 +242,16 @@ export default function SalaPage() {
     );
   }
 
-  if (chat.tipo === "mensajes-vacios") {
-    return <EstadoVacio icono={<Info className="h-12 w-12 text-primary" />} titulo="Sin mensajes" texto="Aún no hay mensajes en esta sala. Sé el primero en escribir!" />;
-  }
-
   const sala = estadoSala.tipo === "lista" ? estadoSala.sala : null;
+
+  const esTipoChat = (tipo: ChatEstado["tipo"], valor: ChatEstado["tipo"]): boolean => tipo === valor;
+  const esChatActivo = esTipoChat(chat.tipo, "activo") || esTipoChat(chat.tipo, "reconexion");
+  const esChatCargando = esTipoChat(chat.tipo, "cargando");
+  const esChatVacio = esTipoChat(chat.tipo, "mensajes-vacios");
+  const esChatError = esTipoChat(chat.tipo, "error");
+  const esReconexion = esTipoChat(chat.tipo, "reconexion");
+
+  const mensajesParaMostrar = esChatActivo ? (chat as { tipo: "activo" | "reconexion"; mensajes: Mensaje[] }).mensajes : [];
 
   const abrirModalEdicion = () => {
     setNombreEdit(sala?.nombre ?? "");
@@ -302,7 +308,6 @@ export default function SalaPage() {
     setEliminando(true);
     try {
       await eliminarSala(sala.id);
-      // Redirect to panel after deletion
       window.location.href = "/panel";
     } catch {
       // Error handled
@@ -319,6 +324,9 @@ export default function SalaPage() {
     }
     navigate("/panel");
   };
+
+  // Determinar si es anfitrión
+  const esLaPersonaAnfitriona = uidPerfil && estadoSala.tipo === "lista" && estadoSala.sala ? esAnfitrion(estadoSala.sala, uidPerfil) : false;
 
   return (
     <>
@@ -370,7 +378,7 @@ export default function SalaPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="text-sm text-text-muted mb-6">
+            <p className="text-xs text-text-muted mb-6">
               ¿Estás seguro de que quieres eliminar esta sala? Esta acción no se puede deshacer.
             </p>
             <div className="flex flex-row-reverse gap-2">
@@ -442,7 +450,7 @@ export default function SalaPage() {
         </aside>
 
         {/* Área de contenido principal (derecha) - centrado y responsivo */}
-        <main className="flex-none pl-0 min-h-screen w-full max-w-full mx-auto px-4 lg:pl-[100px] lg:pr-[100px] lg:pb-[100px]">
+        <main className="flex-none pl-0 min-h-screen w-full max-w-full mx-auto px-4 lg:px-0 lg:pl-[100px] lg:pr-[100px] lg:pb-[100px]">
           <div>
             {/* Encabezado de la sala */}
             <header className="flex-none pt-8 mb-6">
@@ -462,6 +470,19 @@ export default function SalaPage() {
             {/* Línea divisoria */}
             <div className="flex-none h-[1px] bg-[#E2E8F0] mb-6" />
 
+            {/* Banner de reconexión (solo aparece cuando hay reconexión en curso) */}
+            {esReconexion && (
+              <div className="flex-none mb-[14px] rounded-lg border border-primary-tint bg-primary-tint p-4">
+                <div className="flex items-start gap-3">
+                  <Wifi className="h-4 w-4 flex-shrink-0 text-primary" />
+                  <div>
+                    <h3 className="text-xs font-semibold text-ink">Reconectando...</h3>
+                    <p className="text-xs text-primary">Conservaremos tus mensajes mientras recuperamos la conexión.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Contenido: dos columnas en desktop, apiladas en móvil */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_265px] gap-[18px]">
               {/* Columna izquierda: Chat */}
@@ -475,19 +496,62 @@ export default function SalaPage() {
                   </div>
 
                   <div ref={messagesContainerRef} className="flex-none h-[430px] lg:h-[60vh] overflow-y-auto p-6" role="status" aria-live="polite">
-                    {chat.tipo === "activo" && chat.mensajes.length > 0 && chat.mensajes.map((m) => (
-                      <div key={m.id} className={`mb-3 flex flex-col ${m.nombre === (perfil?.nombres ?? "") ? "flex-row-reverse" : "flex-row"}`}>
-                        <div className={`flex items-baseline gap-1 ${m.nombre === (perfil?.nombres ?? "") ? "justify-end text-right" : "justify-start text-left"} mb-0.5`}>
-                          <span className={`text-xs font-semibold ${m.nombre === (perfil?.nombres ?? "") ? "text-ink" : "text-text-muted"}`}>
-                            {m.nombre === (perfil?.nombres ?? "") ? "Tú" : m.nombre}
-                          </span>
-                          <span className="text-xs text-text-muted">{m.hora}</span>
+                    {esChatCargando && (
+                      <SkeletonMensajes />
+                    )}
+                    {esChatActivo && (
+                      <>
+                        {mensajesParaMostrar.length > 0 ? (
+                          mensajesParaMostrar.map((m) => (
+                            <div key={m.id} className={`mb-3 flex flex-col ${m.nombre === (perfil?.nombres ?? "") ? "flex-row-reverse" : "flex-row"}`}>
+                              <div className={`flex items-baseline gap-1 ${m.nombre === (perfil?.nombres ?? "") ? "justify-end text-right" : "justify-start text-left"} mb-0.5`}>
+                                <span className={`text-xs font-semibold ${m.nombre === (perfil?.nombres ?? "") ? "text-ink" : "text-text-muted"}`}>
+                                  {m.nombre === (perfil?.nombres ?? "") ? "Tú" : m.nombre}
+                                </span>
+                                <span className="text-xs text-text-muted">{m.hora}</span>
+                              </div>
+                              <p className={`max-w-[80%] rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${m.nombre === (perfil?.nombres ?? "") ? "bg-primary text-white" : "bg-[#F1F4F8] text-text-muted"}`}>
+                                {m.texto}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full">
+                            <div className="flex-shrink-0 h-11 w-11 rounded-full bg-primary-tint flex items-center justify-center text-primary">
+                              <span className="h-6 w-6">✉</span>
+                            </div>
+                            <h2 className="mt-4 text-sm font-semibold text-ink">Aún no hay mensajes</h2>
+                            <p className="mt-1 text-xs text-text-muted">Escribe el primero.</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {esChatError && (
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <div className="flex-shrink-0 h-11 w-11 rounded-full border-2 border-error-bg flex items-center justify-center text-error">
+                          <span className="h-6 w-6">!</span>
                         </div>
-                        <p className={`max-w-[80%] rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${m.nombre === (perfil?.nombres ?? "") ? "bg-primary text-white" : "bg-[#F1F4F8] text-text-muted"}`}>
-                          {m.texto}
-                        </p>
+                        <h2 className="mt-4 text-sm font-semibold text-ink">Se interrumpió la conexión</h2>
+                        <p className="mt-2 text-xs text-text-muted max-w-[230px] text-center">Tus mensajes están guardados. Intenta conectarte de nuevo.</p>
+                        <div className="mt-6">
+                          <Boton variante="neutral" onClick={() => setChat({ tipo: "cargando" })}>
+                            <span className="flex items-center gap-1">
+                              <span className="h-4 w-4">↻</span>
+                              <span>Reintentar</span>
+                            </span>
+                          </Boton>
+                        </div>
                       </div>
-                    ))}
+                    )}
+                    {esChatVacio && (
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <div className="flex-shrink-0 h-11 w-11 rounded-full bg-primary-tint flex items-center justify-center text-primary">
+                          <span className="h-6 w-6">✉</span>
+                        </div>
+                        <h2 className="mt-4 text-sm font-semibold text-ink">Aún no hay mensajes</h2>
+                        <p className="mt-1 text-xs text-text-muted">Escribe el primero.</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-none border-t border-[#E2E8F0] p-6">
@@ -553,7 +617,7 @@ export default function SalaPage() {
                 </section>
 
                 {/* 2) Acciones del anfitrión (solo para el anfitrión) */}
-                {uidPerfil && estadoSala.tipo === "lista" && estadoSala.sala && esAnfitrion(estadoSala.sala, uidPerfil) && (
+                {esLaPersonaAnfitriona && (
                   <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm flex flex-col">
                     <div>
                       <h2 className="text-sm font-semibold text-ink">Acciones del anfitrión</h2>
