@@ -22,7 +22,7 @@ export async function obtenerHistorialMensajes(
 ): Promise<HistorialBackend[]> {
   return peticion<HistorialBackend[]>(
     `/api/rooms/${roomId}/messages?limit=50`,
-    { signal }
+    { signal, conSesion: true }
   );
 }
 

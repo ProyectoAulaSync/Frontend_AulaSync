@@ -41,6 +41,24 @@ export async function obtenerSala(id: string, signal?: AbortSignal): Promise<Sal
   return mapearSala(sala);
 }
 
+export async function actualizarSala(id: string, nombre: string, signal?: AbortSignal): Promise<SalaBase> {
+  const sala = await peticion<SalaApi>(`/api/rooms/${encodeURIComponent(id)}`, {
+    metodo: "PATCH",
+    cuerpo: { nombre },
+    conSesion: true,
+    signal,
+  });
+  return mapearSala(sala);
+}
+
+export async function eliminarSala(id: string, signal?: AbortSignal): Promise<void> {
+  await peticion<void>(`/api/rooms/${encodeURIComponent(id)}`, {
+    metodo: "DELETE",
+    conSesion: true,
+    signal,
+  });
+}
+
 /** Adaptador de compatibilidad para el Panel; GET /rooms solo devuelve salas propias. */
 export async function listarSalas(signal?: AbortSignal): Promise<Sala[]> {
   const salas = await listarMisSalas(signal);
