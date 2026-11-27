@@ -16,6 +16,7 @@ import PanelPage from "./pages/PanelPage";
 import PerfilPage from "./pages/PerfilPage";
 import RegistroPage from "./pages/RegistroPage";
 import CrearSalaPage from "./pages/CrearSalaPage";
+import UnirseASalaPage from "./pages/UnirseASalaPage";
 import SalaPage from "./pages/SalaPage";
 
 function Rutas() {
@@ -30,6 +31,7 @@ function Rutas() {
           <Route element={<RutaPublica />}>
             <Route path="/ingreso" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroPage />} />
+            <Route path="/unir-sala" element={<UnirseASalaPage />} />
           </Route>
           <Route element={<RutaPrivada modo="username" />}>
             <Route path="/registro/usuario" element={<ElegirUsuarioPage />} />
