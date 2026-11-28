@@ -152,11 +152,12 @@ export default function RegistroPage() {
     <TarjetaFormulario
       titulo="Crear cuenta"
       descripcion="Regístrate para crear y participar en salas de estudio grupales."
+      centrado
     >
       {fallo && <Mensaje tipo={fallo.tipo} titulo={fallo.texto} />}
 
-      <form onSubmit={enviar} noValidate className={`space-y-5 ${fallo ? "mt-5" : ""}`}>
-        <div className="grid gap-4 sm:grid-cols-2">
+      <form onSubmit={enviar} noValidate className={`space-y-3 ${fallo ? "mt-3" : ""}`}>
+        <div className="grid gap-3 sm:grid-cols-2">
           <Campo
             id={ID("nombres")}
             etiqueta="Nombres"
@@ -180,44 +181,43 @@ export default function RegistroPage() {
             error={errorVisible("apellidos")}
           />
         </div>
-        <Campo
-          id={ID("username")}
-          etiqueta="Nombre de usuario"
-          obligatorio
-          autoComplete="username"
-          autoCapitalize="none"
-          spellCheck={false}
-          ayuda="Será visible para tus compañeros de sala."
-          value={valores.username}
-          onChange={(e) => cambiar("username", e.target.value)}
-          onBlur={() => tocar("username")}
-          error={errorVisible("username")}
-          exito={exitoUsuario}
-        />
-
-        <SelectorAvatar valor={avatar} onCambio={setAvatar} nombres={valores.nombres} apellidos={valores.apellidos} />
-
-        <Campo
-          id={ID("email")}
-          etiqueta="Correo electrónico"
-          obligatorio
-          type="email"
-          autoComplete="email"
-          placeholder="Ej: nombre@correo.com"
-          value={valores.email}
-          onChange={(e) => cambiar("email", e.target.value)}
-          onBlur={() => tocar("email")}
-          error={
-            errorVisible("email") &&
-            (rechazados.email?.valor === valores.email ? (
-              <span>
-                {rechazados.email.mensaje} ¿Quieres <Link to="/ingreso">iniciar sesión</Link>?
-              </span>
-            ) : (
-              errorVisible("email")
-            ))
-          }
-        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Campo
+            id={ID("username")}
+            etiqueta="Nombre de usuario"
+            obligatorio
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            ayuda="Será visible para tus compañeros de sala."
+            value={valores.username}
+            onChange={(e) => cambiar("username", e.target.value)}
+            onBlur={() => tocar("username")}
+            error={errorVisible("username")}
+            exito={exitoUsuario}
+          />
+          <Campo
+            id={ID("email")}
+            etiqueta="Correo electrónico"
+            obligatorio
+            type="email"
+            autoComplete="email"
+            placeholder="Ej: nombre@correo.com"
+            value={valores.email}
+            onChange={(e) => cambiar("email", e.target.value)}
+            onBlur={() => tocar("email")}
+            error={
+              errorVisible("email") &&
+              (rechazados.email?.valor === valores.email ? (
+                <span>
+                  {rechazados.email.mensaje} ¿Quieres <Link to="/ingreso">iniciar sesión</Link>?
+                </span>
+              ) : (
+                errorVisible("email")
+              ))
+            }
+          />
+        </div>
         <CampoContrasena
           id={ID("password")}
           etiqueta="Contraseña"
@@ -232,6 +232,11 @@ export default function RegistroPage() {
           error={errorVisible("password")}
         />
 
+        <fieldset className="border border-border-decor rounded-lg p-3 mb-1">
+          <legend className="px-2 text-xs font-medium text-text-muted">Elige un avatar (opcional)</legend>
+          <SelectorAvatar valor={avatar} onCambio={setAvatar} nombres={valores.nombres} apellidos={valores.apellidos} />
+        </fieldset>
+
         <Boton
           type="submit"
           ancho
@@ -243,16 +248,16 @@ export default function RegistroPage() {
           Crear cuenta
         </Boton>
 
-        <div className="flex items-center gap-4 py-1" aria-hidden="true">
+        <div className="flex items-center gap-3 py-2" aria-hidden="true">
           <div className="flex-1 border-t border-border-decor" />
-          <span className="text-sm text-text-subtle">o</span>
+          <span className="text-xs text-text-subtle">o</span>
           <div className="flex-1 border-t border-border-decor" />
         </div>
 
         <BotonGoogle onClick={entrarConGoogle} cargando={enviando === "google"} deshabilitado={enviando === "cuenta"} />
       </form>
 
-      <p className="mt-6 text-center text-sm text-text-muted">
+      <p className="mt-4 text-center text-sm text-text-muted">
         ¿Ya tienes cuenta?{" "}
         <Link to="/ingreso" className="auth-footer-link">
           Iniciar sesión

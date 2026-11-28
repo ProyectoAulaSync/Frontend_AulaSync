@@ -3,17 +3,17 @@ import { useRef, useState, useEffect } from "react";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
 import Cargando from "../components/Cargando";
-import { CircleAlert, CircleCheck, Home, User, LogOut, X, Edit2, Trash2, Wifi, Send } from "lucide-react";
+import { CircleAlert, CircleCheck, Home, User, LogOut, X, Wifi, Send } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { esAnfitrion } from "../lib/salas";
 import { conectar, desconectar } from "../services/realtime";
-import { obtenerSala, actualizarSala, eliminarSala } from "../services/salas";
+import { obtenerSala, listarMiembros, sacarMiembro, toggleSilenciarMiembro, type MiembroSala } from "../services/salas";
 import { obtenerHistorialMensajes } from "../services/api";
 import type { Sala } from "../types/sala";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useToast } from "../hooks/useToast";
 import SkeletonMensajes from "../components/SkeletonMensaje";
 import MensajeChat from "../components/MensajeChat";
+import { obtenerMateria } from "../lib/materias";
 import MenuOpciones from "../components/MenuOpciones";
 
 type ChatEstado =
@@ -50,12 +50,10 @@ export default function SalaPage() {
   const [chat, setChat] = useState<ChatEstado>({ tipo: "cargando" });
   const [socket, setSocket] = useState<any>(null);
   const [textoMensaje, setTextoMensaje] = useState("");
-  const [nombreEdit, setNombreEdit] = useState("");
-  const [mostrarModalEdicion, setMostrarModalEdicion] = useState(false);
-  const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] = useState(false);
-  const [eliminando, setEliminando] = useState(false);
-  const [editando, setEditando] = useState(false);
+  const [miembros, setMiembros] = useState<MiembroSala[]>([]);
+  const [cargandoMiembros, setCargandoMiembros] = useState(false);
   const [participantesSilenciados, setParticipantesSilenciados] = useState<Set<string>>(new Set());
+  const [mostrarConfirmacionSalida, setMostrarConfirmacionSalida] = useState(false);
   const mensajesRef = useRef<MensajeChatData[]>([]);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -68,14 +66,23 @@ export default function SalaPage() {
 
     const controlador = new AbortController();
     obtenerSala(id, controlador.signal)
-      .then((sala) => {
+      .then(async (sala) => {
         setEstadoSala({
           tipo: "lista",
           id,
           sala,
           materia: uidPerfil ? sala.nombre : null,
         });
-        setNombreEdit(sala.nombre);
+        try {
+          setCargandoMiembros(true);
+          const listaMiembros = await listarMiembros(id, controlador.signal);
+          setMiembros(listaMiembros);
+          setParticipantesSilenciados(new Set(listaMiembros.filter((m) => m.silenciado).map((m) => m.uid)));
+        } catch {
+          // No bloquear la vista si falla la carga de miembros
+        } finally {
+          setCargandoMiembros(false);
+        }
       })
       .catch((error: unknown) => {
         if (controlador.signal.aborted) return;
@@ -117,13 +124,12 @@ export default function SalaPage() {
         if (prev.tipo !== "activo") return prev;
         const actualizado = [...prev.mensajes, mensaje];
         mensajesRef.current = actualizado;
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTo({
-            top: messagesContainerRef.current.scrollHeight,
-            behavior: "instant",
-          });
-        }
         return { tipo: "activo", mensajes: actualizado };
+      });
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
       });
     });
 
@@ -138,13 +144,12 @@ export default function SalaPage() {
         };
         const actualizado = [...prev.mensajes, aviso];
         mensajesRef.current = actualizado;
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTo({
-            top: messagesContainerRef.current.scrollHeight,
-            behavior: "instant",
-          });
-        }
         return { tipo: "activo", mensajes: actualizado };
+      });
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
       });
     });
 
@@ -159,13 +164,12 @@ export default function SalaPage() {
         };
         const actualizado = [...prev.mensajes, aviso];
         mensajesRef.current = actualizado;
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTo({
-            top: messagesContainerRef.current.scrollHeight,
-            behavior: "instant",
-          });
-        }
         return { tipo: "activo", mensajes: actualizado };
+      });
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
       });
     });
 
@@ -175,8 +179,6 @@ export default function SalaPage() {
     });
 
     socketInstance.on("sala-eliminada", () => {
-      setMostrarConfirmacionEliminar(false);
-      setMostrarModalEdicion(false);
       mostrarAviso("La sala ha sido eliminada por el anfitrión.", "info");
       navigate("/panel");
     });
@@ -244,8 +246,6 @@ export default function SalaPage() {
     );
   }
 
-  const sala = estadoSala.tipo === "lista" ? estadoSala.sala : null;
-
   const esTipoChat = (tipo: ChatEstado["tipo"], valor: ChatEstado["tipo"]): boolean => tipo === valor;
   const esChatActivo = esTipoChat(chat.tipo, "activo") || esTipoChat(chat.tipo, "reconexion");
   const esChatCargando = esTipoChat(chat.tipo, "cargando");
@@ -254,11 +254,6 @@ export default function SalaPage() {
   const esReconexion = esTipoChat(chat.tipo, "reconexion");
 
   const mensajesParaMostrar = esChatActivo ? (chat as { tipo: "activo" | "reconexion"; mensajes: MensajeChatData[] }).mensajes : [];
-
-  const abrirModalEdicion = () => {
-    setNombreEdit(sala?.nombre ?? "");
-    setMostrarModalEdicion(true);
-  };
 
   const manejarEdicion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,52 +269,18 @@ export default function SalaPage() {
       const actualizado = [...prev.mensajes, mensaje];
       mensajesRef.current = actualizado;
       setTextoMensaje("");
-      if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTo({
-          top: messagesContainerRef.current.scrollHeight,
-          behavior: "instant",
-        });
-      }
       return { tipo: "activo", mensajes: actualizado };
+    });
+    // Scroll automático al último mensaje tras renderizar
+    requestAnimationFrame(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
     });
   };
 
-  const guardarNombre = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nombreEdit.trim() || !sala) return;
-    setEditando(true);
-    try {
-      const actualizada = await actualizarSala(sala.id, nombreEdit.trim());
-      setEstadoSala((prev) => ({
-        ...prev,
-        tipo: "lista" as const,
-        id: actualizada.id,
-        sala: actualizada,
-        materia: uidPerfil ? actualizada.nombre : null,
-      }));
-      setMostrarModalEdicion(false);
-    } catch {
-      // Error handled by toast or could show inline error
-    } finally {
-      setEditando(false);
-    }
-  };
-
-  const eliminarSalaConfirmada = async () => {
-    if (!sala) return;
-    setEliminando(true);
-    try {
-      await eliminarSala(sala.id);
-      window.location.href = "/panel";
-    } catch {
-      // Error handled
-    } finally {
-      setEliminando(false);
-      setMostrarConfirmacionEliminar(false);
-    }
-  };
-
-  const salirDeSala = () => {
+  const confirmarSalida = () => {
+    setMostrarConfirmacionSalida(false);
     if (socket) {
       desconectar();
       setSocket(null);
@@ -327,78 +288,17 @@ export default function SalaPage() {
     navigate("/panel");
   };
 
-  const esLaPersonaAnfitriona = uidPerfil && estadoSala.tipo === "lista" && estadoSala.sala ? esAnfitrion(estadoSala.sala, uidPerfil) : false;
+  const cancelarSalida = () => {
+    setMostrarConfirmacionSalida(false);
+  };
 
   return (
     <>
-      {/* Modal de edición de nombre */}
-      {mostrarModalEdicion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-ink">Editar nombre de la sala</h3>
-              <button
-                onClick={() => setMostrarModalEdicion(false)}
-                className="text-text-muted hover:text-ink"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={guardarNombre} className="space-y-3">
-              <Campo
-                id="nombre-sala"
-                etiqueta="Nombre de la sala"
-                obligatorio
-                value={nombreEdit}
-                onChange={(e) => setNombreEdit(e.target.value)}
-                placeholder="Nombre de la sala"
-              />
-              <div className="flex flex-row-reverse gap-2">
-                <Boton variante="neutral" onClick={() => setMostrarModalEdicion(false)}>
-                  Cancelar
-                </Boton>
-                <Boton variante="primary" disabled={editando || !nombreEdit.trim()}>
-                  {editando ? "Guardando…" : "Guardar cambios"}
-                </Boton>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de confirmación de eliminación */}
-      {mostrarConfirmacionEliminar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-ink">Eliminar sala</h3>
-              <button
-                onClick={() => setMostrarConfirmacionEliminar(false)}
-                className="text-text-muted hover:text-ink"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <p className="text-sm text-text-muted mb-6">
-              ¿Estás seguro de que quieres eliminar esta sala? Esta acción no se puede deshacer.
-            </p>
-            <div className="flex flex-row-reverse gap-2">
-              <Boton variante="neutral" onClick={() => setMostrarConfirmacionEliminar(false)}>
-                Cancelar
-              </Boton>
-              <Boton variante="danger" disabled={eliminando} onClick={eliminarSalaConfirmada}>
-                {eliminando ? "Eliminando…" : "Eliminar sala"}
-              </Boton>
-            </div>
-          </div>
-        </div>
-        )}
-
       {/* Layout contenedor principal: centrado y responsivo */}
       <div className="relative min-h-screen w-full bg-[#F8FAFC]">
 
         {/* Sidebar izquierda (fija en desktop, colapsada en móvil) */}
-        <aside className="fixed inset-y-0 left-0 z-20 w-57 h-full bg-white border-r border-[#E2E8F0] flex flex-col lg:hidden hidden lg:flex">
+        <aside className="fixed inset-y-0 left-0 z-20 w-44 h-full bg-white border-r border-[#E2E8F0] flex flex-col lg:hidden hidden lg:flex">
           <div className="flex-none px-6 pt-6 pb-4">
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0 h-8 w-8 rounded-md bg-primary flex items-center justify-center text-white font-bold text-lg">
@@ -451,15 +351,23 @@ export default function SalaPage() {
         </aside>
 
         {/* Área de contenido principal (derecha) - centrado y responsivo */}
-        <main className="flex-none pl-0 min-h-screen w-full max-w-full mx-auto px-4 lg:px-0 lg:pl-[100px] lg:pr-[100px] lg:pb-[50px]">
+        <main className="flex-none pl-0 min-h-screen w-full max-w-full mx-auto px-4 lg:px-[6rem] lg:pb-[50px]">
           <div>
             {/* Encabezado de la sala */}
-            <header className="flex-none pt-8 mb-6">
-              <h1 className="text-2xl font-bold text-primary mb-1">{estadoSala.tipo === "lista" ? estadoSala.sala?.nombre ?? "Sala" : "Sala"}</h1>
-              <div className="flex items-center gap-2 text-base text-text-muted">
-                <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-                <span>3 personas conectadas · ID {estadoSala.tipo === "lista" ? estadoSala.sala?.id : ""}</span>
+            <header className="flex-none pt-8 mb-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 lg:gap-0">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-2xl font-bold text-primary mb-1">{estadoSala.tipo === "lista" ? estadoSala.sala?.nombre ?? "Sala" : "Sala"}</h1>
+                {estadoSala.tipo === "lista" && estadoSala.sala && uidPerfil && (
+                  <div className="flex items-center gap-2 text-base text-text-muted">
+                    <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+                    <span>{obtenerMateria(uidPerfil, estadoSala.sala.id) ?? "Sin materia"} - ID {estadoSala.sala.id}</span>
+                  </div>
+                )}
               </div>
+              <Boton variante="neutral" onClick={() => setMostrarConfirmacionSalida(true)}>
+                <span className="h-4 w-4">↪</span>
+                <span>Salir de la sala</span>
+              </Boton>
             </header>
 
             {/* Línea divisoria */}
@@ -587,101 +495,114 @@ export default function SalaPage() {
                     <div className="flex items-center gap-2">
                       <h2 className="text-base font-semibold text-ink">Participantes</h2>
                       <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-tint flex items-center justify-center text-primary text-sm font-bold">
-                        3
+                        {miembros.length}
                       </span>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    {[
-                      { iniciales: "MG", nombre: "María González", rol: "Anfitriona" },
-                      { iniciales: "DC", nombre: "Daniel Cruz", rol: "Participante" },
-                      { iniciales: "JL", nombre: "Juan López", rol: "Participante" },
-                    ].map((p) => {
-                      const esAnfitriona = p.rol === "Anfitriona";
-                      const estaSilenciado = participantesSilenciados.has(p.iniciales);
-                      return (
-                        <div key={p.iniciales} className="flex items-center gap-3">
-                          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-sm font-bold text-text-muted">
-                            {p.iniciales}
-                          </div>
-                          <div className="flex-1 flex flex-col min-w-0">
-                            <span className="text-base font-semibold text-ink truncate">{p.nombre}</span>
-                            <span className="text-sm text-text-muted truncate">{p.rol}</span>
-                          </div>
-                          {!esAnfitriona && (
-                            <MenuOpciones
-                              opciones={[
-                                {
-                                  texto: "Sacar de la sala",
-                                  onClick: () => {
-                                    setParticipantesSilenciados((prev) => {
-                                      const siguiente = new Set(prev);
-                                      siguiente.delete(p.iniciales);
-                                      return siguiente;
-                                    });
-                                    mostrarAviso(`${p.nombre} fue sacado de la sala.`);
+                  <div className="flex-1 overflow-y-auto lg:max-h-[calc(100vh-420px)] space-y-3">
+                    {cargandoMiembros ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Cargando texto="Cargando participantes…" />
+                      </div>
+                    ) : (
+                      miembros.map((m) => {
+                        const esAnfitriona = m.uid === (estadoSala.tipo === "lista" ? estadoSala.sala?.anfitrionId : null);
+                        const nombre = m.uid; // El backend solo devuelve uid; se muestra el ID como identificador
+                        const estaSilenciado = participantesSilenciados.has(m.uid);
+                        const iniciales = nombre.slice(0, 2).toUpperCase();
+                        return (
+                          <div key={m.uid} className="flex items-center gap-3">
+                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-sm font-bold text-text-muted">
+                              {iniciales}
+                            </div>
+                            <div className="flex-1 flex flex-col min-w-0">
+                              <span className="text-base font-semibold text-ink truncate">{nombre}</span>
+                              <span className="text-sm text-text-muted truncate">{esAnfitriona ? "Anfitrión" : "Participante"}</span>
+                            </div>
+                            {!esAnfitriona && (
+                              <MenuOpciones
+                                opciones={[
+                                  {
+                                    texto: "Sacar de la sala",
+                                    onClick: async () => {
+                                      if (!id) return;
+                                      try {
+                                        await sacarMiembro(id, m.uid);
+                                        setMiembros((prev) => prev.filter((mi) => mi.uid !== m.uid));
+                                        setParticipantesSilenciados((prev) => {
+                                          const siguiente = new Set(prev);
+                                          siguiente.delete(m.uid);
+                                          return siguiente;
+                                        });
+                                        mostrarAviso(`${nombre} fue sacado de la sala.`);
+                                      } catch {
+                                        mostrarAviso("No se pudo sacar al participante.");
+                                      }
+                                    },
                                   },
-                                },
-                                {
-                                  texto: estaSilenciado ? "Habilitar escritura" : "Silenciar participante",
-                                  onClick: () => {
-                                    setParticipantesSilenciados((prev) => {
-                                      const siguiente = new Set(prev);
-                                      if (estaSilenciado) siguiente.delete(p.iniciales);
-                                      else siguiente.add(p.iniciales);
-                                      return siguiente;
-                                    });
-                                    mostrarAviso(
-                                      estaSilenciado
-                                        ? `${p.nombre} puede escribir nuevamente.`
-                                        : `${p.nombre} ha sido silenciado.`
-                                    );
+                                  {
+                                    texto: estaSilenciado ? "Habilitar escritura" : "Silenciar participante",
+                                    onClick: async () => {
+                                      if (!id) return;
+                                      try {
+                                        await toggleSilenciarMiembro(id, m.uid, !estaSilenciado);
+                                        setParticipantesSilenciados((prev) => {
+                                          const siguiente = new Set(prev);
+                                          if (estaSilenciado) siguiente.delete(m.uid);
+                                          else siguiente.add(m.uid);
+                                          return siguiente;
+                                        });
+                                        mostrarAviso(
+                                          estaSilenciado
+                                            ? `${nombre} puede escribir nuevamente.`
+                                            : `${nombre} ha sido silenciado.`
+                                        );
+                                      } catch {
+                                        mostrarAviso("No se pudo cambiar el estado del participante.");
+                                      }
+                                    },
                                   },
-                                },
-                              ]}
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-
-                {/* 2) Acciones del anfitrión (solo para el anfitrión) */}
-                {esLaPersonaAnfitriona && (
-                  <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm flex flex-col">
-                    <div>
-                      <h2 className="text-base font-semibold text-ink">Acciones del anfitrión</h2>
-                      <p className="text-sm text-text-muted mt-0.5">Solo tú puedes cambiar o eliminar esta sala.</p>
-                    </div>
-                    <div className="mt-4 flex flex-col gap-1.5">
-                      <Boton variante="neutral" icono={<Edit2 className="h-4 w-4" aria-hidden="true" />} onClick={abrirModalEdicion}>
-                        Editar nombre
-                      </Boton>
-                      <Boton variante="neutral" icono={<Trash2 className="h-4 w-4" aria-hidden="true" />} onClick={() => setMostrarConfirmacionEliminar(true)}>
-                        Eliminar sala
-                      </Boton>
-                    </div>
-                  </section>
-                )}
-
-                {/* 3) Salir de la sala */}
-                <section className="flex-none rounded-lg border border-[#FBCFE8] bg-[#FFF1F2] p-6 shadow-sm flex flex-col">
-                  <div>
-                    <h2 className="text-base font-semibold text-ink">Salir de la sala</h2>
-                    <p className="text-sm text-text-muted mt-0.5">Podrás volver a entrar mientras la sala exista.</p>
-                  </div>
-                  <div className="mt-4">
-                    <Boton variante="neutral" onClick={salirDeSala}>
-                      <span className="h-4 w-4">↪</span>
-                      <span>Salir de la sala</span>
-                    </Boton>
+                                ]}
+                              />
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </section>
               </div>
             </div>
           </div>
         </main>
+
+        {/* Modal de confirmación de salida */}
+        {mostrarConfirmacionSalida && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-ink">Salir de la sala</h3>
+                <button
+                  onClick={cancelarSalida}
+                  className="text-text-muted hover:text-ink"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="mb-6 text-sm text-text-muted">
+                ¿Estás seguro de que quieres salir de esta sala? Podrás volver a entrar mientras la sala exista.
+              </p>
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                <Boton variante="neutral" onClick={cancelarSalida}>
+                  Cancelar
+                </Boton>
+                <Boton variante="danger" onClick={confirmarSalida}>
+                  Salir de la sala
+                </Boton>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </>
