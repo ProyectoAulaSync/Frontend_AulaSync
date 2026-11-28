@@ -3,7 +3,7 @@ import { useRef, useState, useEffect } from "react";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
 import Cargando from "../components/Cargando";
-import { CircleAlert, CircleCheck, Home, User, LogOut, X, Wifi, Send } from "lucide-react";
+import { CircleAlert, CircleCheck, Home, User, LogOut, X, Wifi, Send, MicOff } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { conectar, desconectar } from "../services/realtime";
 import { obtenerSala, listarMiembros, sacarMiembro, toggleSilenciarMiembro, type MiembroSala } from "../services/salas";
@@ -14,6 +14,7 @@ import { useToast } from "../hooks/useToast";
 import SkeletonMensajes from "../components/SkeletonMensaje";
 import MensajeChat from "../components/MensajeChat";
 import { obtenerMateria } from "../lib/materias";
+import { esAnfitrion } from "../lib/salas";
 import MenuOpciones from "../components/MenuOpciones";
 
 type ChatEstado =
@@ -292,6 +293,8 @@ export default function SalaPage() {
     setMostrarConfirmacionSalida(false);
   };
 
+  const esLaPersonaAnfitriona = uidPerfil && estadoSala.tipo === "lista" && estadoSala.sala ? esAnfitrion(estadoSala.sala, uidPerfil) : false;
+
   return (
     <>
       {/* Layout contenedor principal: centrado y responsivo */}
@@ -495,7 +498,7 @@ export default function SalaPage() {
                     <div className="flex items-center gap-2">
                       <h2 className="text-base font-semibold text-ink">Participantes</h2>
                       <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-tint flex items-center justify-center text-primary text-sm font-bold">
-                        {miembros.length}
+                        {miembros.length + (estadoSala.tipo === "lista" && estadoSala.sala ? 1 : 0)}
                       </span>
                     </div>
                   </div>
@@ -505,69 +508,101 @@ export default function SalaPage() {
                         <Cargando texto="Cargando participantes…" />
                       </div>
                     ) : (
-                      miembros.map((m) => {
-                        const esAnfitriona = m.uid === (estadoSala.tipo === "lista" ? estadoSala.sala?.anfitrionId : null);
-                        const nombre = m.uid; // El backend solo devuelve uid; se muestra el ID como identificador
-                        const estaSilenciado = participantesSilenciados.has(m.uid);
-                        const iniciales = nombre.slice(0, 2).toUpperCase();
-                        return (
-                          <div key={m.uid} className="flex items-center gap-3">
-                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-sm font-bold text-text-muted">
-                              {iniciales}
+                      <>
+                        {/* Anfitrión primero */}
+                        {estadoSala.tipo === "lista" && estadoSala.sala && (
+                          <div key="anfitrion" className="flex items-center gap-3">
+                            <div className="relative flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-sm font-bold text-text-muted">
+                              {estadoSala.sala.anfitrionId.slice(0, 2).toUpperCase()}
+                              {participantesSilenciados.has(estadoSala.sala.anfitrionId) && (
+                                <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
+                                  <MicOff className="h-2 w-2 text-white" aria-hidden="true" />
+                                </div>
+                              )}
                             </div>
                             <div className="flex-1 flex flex-col min-w-0">
-                              <span className="text-base font-semibold text-ink truncate">{nombre}</span>
-                              <span className="text-sm text-text-muted truncate">{esAnfitriona ? "Anfitrión" : "Participante"}</span>
+                              <span className="text-base font-semibold text-ink truncate">
+                                {estadoSala.sala.anfitrionId}
+                              </span>
+                              <span className="text-sm text-text-muted truncate">Anfitrión</span>
                             </div>
-                            {!esAnfitriona && (
-                              <MenuOpciones
-                                opciones={[
-                                  {
-                                    texto: "Sacar de la sala",
-                                    onClick: async () => {
-                                      if (!id) return;
-                                      try {
-                                        await sacarMiembro(id, m.uid);
-                                        setMiembros((prev) => prev.filter((mi) => mi.uid !== m.uid));
-                                        setParticipantesSilenciados((prev) => {
-                                          const siguiente = new Set(prev);
-                                          siguiente.delete(m.uid);
-                                          return siguiente;
-                                        });
-                                        mostrarAviso(`${nombre} fue sacado de la sala.`);
-                                      } catch {
-                                        mostrarAviso("No se pudo sacar al participante.");
-                                      }
-                                    },
-                                  },
-                                  {
-                                    texto: estaSilenciado ? "Habilitar escritura" : "Silenciar participante",
-                                    onClick: async () => {
-                                      if (!id) return;
-                                      try {
-                                        await toggleSilenciarMiembro(id, m.uid, !estaSilenciado);
-                                        setParticipantesSilenciados((prev) => {
-                                          const siguiente = new Set(prev);
-                                          if (estaSilenciado) siguiente.delete(m.uid);
-                                          else siguiente.add(m.uid);
-                                          return siguiente;
-                                        });
-                                        mostrarAviso(
-                                          estaSilenciado
-                                            ? `${nombre} puede escribir nuevamente.`
-                                            : `${nombre} ha sido silenciado.`
-                                        );
-                                      } catch {
-                                        mostrarAviso("No se pudo cambiar el estado del participante.");
-                                      }
-                                    },
-                                  },
-                                ]}
-                              />
-                            )}
                           </div>
-                        );
-                      })
+                        )}
+                        {miembros
+                          .filter(
+                            (m) =>
+                              estadoSala.tipo !== "lista" ||
+                              m.uid !== estadoSala.sala?.anfitrionId
+                          )
+                          .map((m) => {
+                            const esAnfitriona = m.uid === (estadoSala.tipo === "lista" ? estadoSala.sala?.anfitrionId : null);
+                            const nombre = m.uid; // El backend solo devuelve uid; se muestra el ID como identificador
+                            const estaSilenciado = participantesSilenciados.has(m.uid);
+                            const iniciales = nombre.slice(0, 2).toUpperCase();
+                            return (
+                              <div key={m.uid} className="flex items-center gap-3">
+                            <div className="relative flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-sm font-bold text-text-muted">
+                              {iniciales}
+                              {estaSilenciado && (
+                                <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
+                                  <MicOff className="h-2 w-2 text-white" aria-hidden="true" />
+                                </div>
+                              )}
+                            </div>
+                                <div className="flex-1 flex flex-col min-w-0">
+                                  <span className="text-base font-semibold text-ink truncate">{nombre}</span>
+                                  <span className="text-sm text-text-muted truncate">{esAnfitriona ? "Anfitrión" : "Participante"}</span>
+                                </div>
+                                {esLaPersonaAnfitriona && !esAnfitriona && (
+                                  <MenuOpciones
+                                    opciones={[
+                                      {
+                                        texto: "Sacar de la sala",
+                                        onClick: async () => {
+                                          if (!id) return;
+                                          try {
+                                            await sacarMiembro(id, m.uid);
+                                            setMiembros((prev) => prev.filter((mi) => mi.uid !== m.uid));
+                                            setParticipantesSilenciados((prev) => {
+                                              const siguiente = new Set(prev);
+                                              siguiente.delete(m.uid);
+                                              return siguiente;
+                                            });
+                                            mostrarAviso(`${nombre} fue sacado de la sala.`);
+                                          } catch {
+                                            mostrarAviso("No se pudo sacar al participante.");
+                                          }
+                                        },
+                                      },
+                                      {
+                                        texto: estaSilenciado ? "Habilitar escritura" : "Silenciar participante",
+                                        onClick: async () => {
+                                          if (!id) return;
+                                          try {
+                                            await toggleSilenciarMiembro(id, m.uid, !estaSilenciado);
+                                            setParticipantesSilenciados((prev) => {
+                                              const siguiente = new Set(prev);
+                                              if (estaSilenciado) siguiente.delete(m.uid);
+                                              else siguiente.add(m.uid);
+                                              return siguiente;
+                                            });
+                                            mostrarAviso(
+                                              estaSilenciado
+                                                ? `${nombre} puede escribir nuevamente.`
+                                                : `${nombre} ha sido silenciado.`
+                                            );
+                                          } catch {
+                                            mostrarAviso("No se pudo cambiar el estado del participante.");
+                                          }
+                                        },
+                                      },
+                                    ]}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                      </>
                     )}
                   </div>
                 </section>
