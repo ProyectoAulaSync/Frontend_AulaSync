@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Plus, Users, X } from "lucide-react";
+import { BookOpen, Copy, Plus, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
@@ -11,10 +11,12 @@ import Mensaje from "../components/Mensaje";
 import { useAuth } from "../hooks/useAuth";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useSalas } from "../hooks/useSalas";
+import { useToast } from "../hooks/useToast";
 import { obtenerMateria } from "../lib/materias";
 import { TIEMPO_MINIMO_MS } from "../lib/constantes";
 import { esAnfitrion } from "../lib/salas";
 import { ApiError } from "../services/api";
+import { actualizarSala, eliminarSala, unirASala } from "../services/salas";
 
 export default function PanelPage() {
   usePageTitle("Mis salas");
@@ -22,10 +24,19 @@ export default function PanelPage() {
   const location = useLocation();
   const navegar = useNavigate();
   const { estado, reintentar } = useSalas();
+  const { mostrarAviso } = useToast();
   const [mostrarCarga, setMostrarCarga] = useState(false);
-  const [avisoCopiado, setAvisoCopiado] = useState<{ salaId: string; texto: string } | null>(null);
   const [mostrarModalUnirSala, setMostrarModalUnirSala] = useState(false);
   const [idSala, setIdSala] = useState("");
+  const [uniendo, setUniendo] = useState(false);
+  const [mostrarModalEditarSala, setMostrarModalEditarSala] = useState(false);
+  const [salaEditandoId, setSalaEditandoId] = useState("");
+  const [nombreSalaEdit, setNombreSalaEdit] = useState("");
+  const [mostrarConfirmarEliminar, setMostrarConfirmarEliminar] = useState(false);
+  const [salaEliminandoId, setSalaEliminandoId] = useState("");
+  const [mostrarModalEntrarSala, setMostrarModalEntrarSala] = useState(false);
+  const [salaEntrandoId, setSalaEntrandoId] = useState("");
+  const [salaEntrandoNombre, setSalaEntrandoNombre] = useState("");
   const cargaMostradaEn = useRef<number | null>(null);
 
   useEffect(() => {
@@ -57,9 +68,9 @@ export default function PanelPage() {
   async function copiarId(salaId: string) {
     try {
       await navigator.clipboard.writeText(salaId);
-      setAvisoCopiado({ salaId, texto: "ID copiado" });
+      mostrarAviso("ID copiado", "exito");
     } catch {
-      setAvisoCopiado({ salaId, texto: "No se pudo copiar el ID" });
+      mostrarAviso("No se pudo copiar el ID", "info");
     }
   }
 
@@ -72,6 +83,36 @@ export default function PanelPage() {
     estado.tipo !== "listo" ||
     mostrarCarga ||
     estado.salas.length > 0;
+
+  const guardarNombreSala = async () => {
+    if (!nombreSalaEdit.trim() || !salaEditandoId) return;
+    try {
+      await actualizarSala(salaEditandoId, nombreSalaEdit.trim());
+      setMostrarModalEditarSala(false);
+      setSalaEditandoId("");
+      setNombreSalaEdit("");
+    } catch {
+      // Error manejado por peticion (ApiError)
+    }
+  };
+
+  const eliminarSalaConfirmada = async () => {
+    if (!salaEliminandoId) return;
+    try {
+      await eliminarSala(salaEliminandoId);
+      setMostrarConfirmarEliminar(false);
+      setSalaEliminandoId("");
+    } catch {
+      // Error manejado por peticion (ApiError)
+    }
+  };
+
+  const confirmarEntrarSala = () => {
+    setMostrarModalEntrarSala(false);
+    if (salaEntrandoId) {
+      navegar(`/salas/${encodeURIComponent(salaEntrandoId)}`);
+    }
+  };
 
   return (
     <main className="page-container">
@@ -153,42 +194,75 @@ export default function PanelPage() {
             {estado.salas.map((sala) => {
               const materia = perfil ? obtenerMateria(perfil.uid, sala.id) : null;
               const esPropietario = perfil ? esAnfitrion(sala, perfil.uid) : false;
-              const aviso = avisoCopiado?.salaId === sala.id ? avisoCopiado.texto : "";
 
               return (
                 <li
                   key={sala.id}
-                  className="relative flex min-w-0 flex-col rounded-xl border border-border-decor bg-white p-5 shadow-sm"
+                  className="relative flex flex-col rounded-2xl border border-border-decor bg-white shadow-sm p-6 hover:shadow-md transition-shadow duration-200 ease-out"
                 >
-                  <div className="absolute top-4 right-4">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-white">
+                        <BookOpen className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-primary uppercase tracking-wide">{materia ?? "Sin asignar"}</p>
+                        <h2 className="text-xl font-bold text-ink break-words">{sala.nombre}</h2>
+                      </div>
+                    </div>
                     <MenuOpciones
-                      opciones={[
-                        {
-                          texto: "Copiar ID",
-                          onClick: () => void copiarId(sala.id),
-                        },
-                        {
-                          texto: "Entrar",
-                          onClick: () => navegar(`/salas/${encodeURIComponent(sala.id)}`),
-                        },
-                      ]}
+                      opciones={esPropietario
+                        ? [
+                            {
+                              texto: "Editar sala",
+                              onClick: () => {
+                                setSalaEditandoId(sala.id);
+                                setNombreSalaEdit(sala.nombre);
+                                setMostrarModalEditarSala(true);
+                              },
+                            },
+                            {
+                              texto: "Eliminar sala",
+                              onClick: () => {
+                                setSalaEliminandoId(sala.id);
+                                setMostrarConfirmarEliminar(true);
+                              },
+                            },
+                          ]
+                        : []}
                     />
                   </div>
-                  {esPropietario && (
-                    <span className="mb-3 w-fit rounded-full bg-primary-tint px-3 py-1 text-sm font-semibold text-primary-active">
-                      Anfitrión
-                    </span>
-                  )}
-                  <h2 className="break-words text-xl">{sala.nombre}</h2>
-                  {materia && <p className="mt-2 text-text-muted">{materia}</p>}
-                  <p className="mt-3 break-all text-sm text-text-muted">ID: {sala.id}</p>
-                  <p
-                    role="status"
-                    aria-live="polite"
-                    className={`mt-2 min-h-6 text-sm ${aviso.startsWith("No se pudo") ? "text-error" : "text-success"}`}
-                  >
-                    {aviso}
+
+                  <div className="h-[1px] w-full bg-border-decor mb-4" />
+
+                  <p className="mt-3 break-all flex items-center gap-2 text-sm text-text-muted">
+                    <span>ID:</span>
+                    <span className="flex-shrink-0 truncate max-w-[120px]">{sala.id}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void copiarId(sala.id);
+                      }}
+                      className="btn btn[data-modal-close] p-0 ml-1 hover:bg-surface-alt"
+                      aria-label="Copiar ID"
+                    >
+                      <Copy className="h-4 w-4" aria-hidden="true" />
+                    </button>
                   </p>
+
+                  <div className="mt-auto pt-6 flex items-center gap-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSalaEntrandoId(sala.id);
+                        setSalaEntrandoNombre(sala.nombre);
+                        setMostrarModalEntrarSala(true);
+                      }}
+                      className="btn-entrar-sala"
+                    >
+                      Entrar
+                    </button>
+                  </div>
                 </li>
               );
             })}
@@ -227,14 +301,124 @@ export default function PanelPage() {
               </Boton>
               <Boton
                 variante="primary"
-                disabled={idSala.length === 0}
-                onClick={() => {
-                  navegar(`/salas/${encodeURIComponent(idSala)}`);
-                  setMostrarModalUnirSala(false);
-                  setIdSala("");
+                disabled={idSala.length === 0 || uniendo}
+                cargando={uniendo}
+                textoCargando="Uniendo…"
+                onClick={async () => {
+                  setUniendo(true);
+                  try {
+                    await unirASala(idSala);
+                    navegar(`/salas/${encodeURIComponent(idSala)}`);
+                  } catch {
+                    // El error ya se maneja en peticion (ApiError); se deja que la navegación falle o se muestre en consola
+                  } finally {
+                    setUniendo(false);
+                    setMostrarModalUnirSala(false);
+                    setIdSala("");
+                  }
                 }}
               >
                 Unirme
+              </Boton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Editar nombre de sala */}
+      {mostrarModalEditarSala && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-ink">Editar sala</h3>
+              <button
+                onClick={() => setMostrarModalEditarSala(false)}
+                className="text-text-muted hover:text-ink"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-6 text-sm text-text-muted">
+              Cambia el nombre de la sala.
+            </p>
+            <Campo
+              id="editar-sala-nombre"
+              etiqueta="Nombre de la sala"
+              obligatorio
+              value={nombreSalaEdit}
+              onChange={(e) => setNombreSalaEdit(e.target.value.trim())}
+              placeholder="Nombre de la sala"
+            />
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+              <Boton variante="neutral" onClick={() => setMostrarModalEditarSala(false)}>
+                Cancelar
+              </Boton>
+              <Boton
+                variante="primary"
+                disabled={!nombreSalaEdit.trim()}
+                onClick={guardarNombreSala}
+              >
+                Guardar cambios
+              </Boton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirmar eliminación de sala */}
+      {mostrarConfirmarEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-ink">Eliminar sala</h3>
+              <button
+                onClick={() => setMostrarConfirmarEliminar(false)}
+                className="text-text-muted hover:text-ink"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-6 text-sm text-text-muted">
+              ¿Estás seguro de que quieres eliminar esta sala? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+              <Boton variante="neutral" onClick={() => setMostrarConfirmarEliminar(false)}>
+                Cancelar
+              </Boton>
+              <Boton
+                variante="danger"
+                onClick={eliminarSalaConfirmada}
+              >
+                Eliminar sala
+              </Boton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirmar entrada a sala */}
+      {mostrarModalEntrarSala && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-ink">Entrar a la sala</h3>
+              <button
+                onClick={() => setMostrarModalEntrarSala(false)}
+                className="text-text-muted hover:text-ink"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-6 text-sm text-text-muted">
+              Vas a entrar a la sala{" "}
+              <span className="font-semibold text-ink">{salaEntrandoNombre}</span>
+            </p>
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+              <Boton variante="neutral" onClick={() => setMostrarModalEntrarSala(false)}>
+                Cancelar
+              </Boton>
+              <Boton variante="primary" onClick={confirmarEntrarSala}>
+                Entrar
               </Boton>
             </div>
           </div>

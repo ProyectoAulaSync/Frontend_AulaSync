@@ -64,3 +64,38 @@ export async function listarSalas(signal?: AbortSignal): Promise<Sala[]> {
   const salas = await listarMisSalas(signal);
   return salas.map((sala) => ({ ...sala, rol: "Anfitrión" }));
 }
+
+export type MiembroSala = {
+  roomId: string;
+  uid: string;
+  joinedAt: unknown;
+  silenciado: boolean;
+};
+
+export async function unirASala(roomId: string, signal?: AbortSignal): Promise<{ roomId: string; uid: string }> {
+  return peticion<{ roomId: string; uid: string }>(
+    `/api/rooms/${encodeURIComponent(roomId)}/join`,
+    { metodo: "POST", conSesion: true, signal },
+  );
+}
+
+export async function listarMiembros(roomId: string, signal?: AbortSignal): Promise<MiembroSala[]> {
+  return peticion<MiembroSala[]>(
+    `/api/rooms/${encodeURIComponent(roomId)}/members`,
+    { conSesion: true, signal },
+  );
+}
+
+export async function sacarMiembro(roomId: string, uid: string, signal?: AbortSignal): Promise<void> {
+  await peticion<void>(
+    `/api/rooms/${encodeURIComponent(roomId)}/members/${encodeURIComponent(uid)}`,
+    { metodo: "DELETE", conSesion: true, signal },
+  );
+}
+
+export async function toggleSilenciarMiembro(roomId: string, uid: string, silenciado: boolean, signal?: AbortSignal): Promise<MiembroSala> {
+  return peticion<MiembroSala>(
+    `/api/rooms/${encodeURIComponent(roomId)}/members/${encodeURIComponent(uid)}/silenciar`,
+    { metodo: "PATCH", cuerpo: { silenciado }, conSesion: true, signal },
+  );
+}

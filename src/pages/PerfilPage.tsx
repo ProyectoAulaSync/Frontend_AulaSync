@@ -392,8 +392,7 @@ export default function PerfilPage() {
         </section>
 
         {!editando && (
-          <section aria-labelledby="titulo-eliminar-cuenta" className="mt-8 border-t border-border-decor pt-6">
-            <h2 id="titulo-eliminar-cuenta" className="text-lg">Eliminar cuenta</h2>
+          <section className="mt-8 border-t border-border-decor pt-6">
             <div className="mt-4">
               <Boton variante="danger" onClick={abrirConfirmacionEliminacion}>
                 Eliminar cuenta
