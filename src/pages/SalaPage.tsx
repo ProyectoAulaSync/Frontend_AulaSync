@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import Boton from "../components/Boton";
 import Campo from "../components/Campo";
 import Cargando from "../components/Cargando";
@@ -15,6 +14,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { useToast } from "../hooks/useToast";
 import SkeletonMensajes from "../components/SkeletonMensaje";
 import MensajeChat from "../components/MensajeChat";
+import MenuOpciones from "../components/MenuOpciones";
 
 type ChatEstado =
   | { tipo: "cargando" }
@@ -55,6 +55,7 @@ export default function SalaPage() {
   const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [participantesSilenciados, setParticipantesSilenciados] = useState<Set<string>>(new Set());
   const mensajesRef = useRef<MensajeChatData[]>([]);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -454,12 +455,6 @@ export default function SalaPage() {
           <div>
             {/* Encabezado de la sala */}
             <header className="flex-none pt-8 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <Link to="/panel" className="flex items-center gap-1 text-sm font-medium text-ink hover:text-primary">
-                  <span className="text-sm">‹</span>
-                  <span>Mis salas</span>
-                </Link>
-              </div>
               <h1 className="text-2xl font-bold text-primary mb-1">{estadoSala.tipo === "lista" ? estadoSala.sala?.nombre ?? "Sala" : "Sala"}</h1>
               <div className="flex items-center gap-2 text-base text-text-muted">
                 <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-[#10B981]" />
@@ -574,7 +569,7 @@ export default function SalaPage() {
                         type="submit"
                       >
                         <span className="flex items-center gap-1">
-                          <span className="h-4 w-4">✈</span>
+                          <Send className="h-4 w-4" aria-hidden="true" />
                           <span>Enviar</span>
                         </span>
                       </Boton>
@@ -589,28 +584,66 @@ export default function SalaPage() {
                 {/* 1) Participantes */}
                 <section className="flex-none rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm flex flex-col">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-base font-semibold text-ink">Participantes</h2>
-                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-tint flex items-center justify-center text-primary text-sm font-bold">
-                      3
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-semibold text-ink">Participantes</h2>
+                      <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-tint flex items-center justify-center text-primary text-sm font-bold">
+                        3
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     {[
                       { iniciales: "MG", nombre: "María González", rol: "Anfitriona" },
                       { iniciales: "DC", nombre: "Daniel Cruz", rol: "Participante" },
                       { iniciales: "JL", nombre: "Juan López", rol: "Participante" },
-                    ].map((p) => (
-                      <div key={p.iniciales} className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-sm font-bold text-text-muted">
-                          {p.iniciales}
+                    ].map((p) => {
+                      const esAnfitriona = p.rol === "Anfitriona";
+                      const estaSilenciado = participantesSilenciados.has(p.iniciales);
+                      return (
+                        <div key={p.iniciales} className="flex items-center gap-3">
+                          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E2E8F0] flex items-center justify-center text-sm font-bold text-text-muted">
+                            {p.iniciales}
+                          </div>
+                          <div className="flex-1 flex flex-col min-w-0">
+                            <span className="text-base font-semibold text-ink truncate">{p.nombre}</span>
+                            <span className="text-sm text-text-muted truncate">{p.rol}</span>
+                          </div>
+                          {!esAnfitriona && (
+                            <MenuOpciones
+                              opciones={[
+                                {
+                                  texto: "Sacar de la sala",
+                                  onClick: () => {
+                                    setParticipantesSilenciados((prev) => {
+                                      const siguiente = new Set(prev);
+                                      siguiente.delete(p.iniciales);
+                                      return siguiente;
+                                    });
+                                    mostrarAviso(`${p.nombre} fue sacado de la sala.`);
+                                  },
+                                },
+                                {
+                                  texto: estaSilenciado ? "Habilitar escritura" : "Silenciar participante",
+                                  onClick: () => {
+                                    setParticipantesSilenciados((prev) => {
+                                      const siguiente = new Set(prev);
+                                      if (estaSilenciado) siguiente.delete(p.iniciales);
+                                      else siguiente.add(p.iniciales);
+                                      return siguiente;
+                                    });
+                                    mostrarAviso(
+                                      estaSilenciado
+                                        ? `${p.nombre} puede escribir nuevamente.`
+                                        : `${p.nombre} ha sido silenciado.`
+                                    );
+                                  },
+                                },
+                              ]}
+                            />
+                          )}
                         </div>
-                        <div className="flex-1 flex flex-col min-w-0">
-                          <span className="text-base font-semibold text-ink truncate">{p.nombre}</span>
-                          <span className="text-sm text-text-muted truncate">{p.rol}</span>
-                        </div>
-                        <span className="flex-shrink-0 h-2 w-2 rounded-full bg-[#10B981]" />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
 
