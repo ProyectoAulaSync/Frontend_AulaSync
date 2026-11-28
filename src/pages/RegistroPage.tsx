@@ -152,7 +152,6 @@ export default function RegistroPage() {
     <TarjetaFormulario
       titulo="Crear cuenta"
       descripcion="Regístrate para crear y participar en salas de estudio grupales."
-      centrado
     >
       {fallo && <Mensaje tipo={fallo.tipo} titulo={fallo.texto} />}
 
@@ -257,7 +256,7 @@ export default function RegistroPage() {
         <BotonGoogle onClick={entrarConGoogle} cargando={enviando === "google"} deshabilitado={enviando === "cuenta"} />
       </form>
 
-      <p className="mt-4 text-center text-sm text-text-muted">
+      <p className="mt-3 text-center text-sm text-text-muted">
         ¿Ya tienes cuenta?{" "}
         <Link to="/ingreso" className="auth-footer-link">
           Iniciar sesión

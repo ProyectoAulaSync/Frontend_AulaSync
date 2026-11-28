@@ -12,7 +12,7 @@ import { useAuth } from "../hooks/useAuth";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useSalas } from "../hooks/useSalas";
 import { useToast } from "../hooks/useToast";
-import { obtenerMateria } from "../lib/materias";
+import { obtenerMateria, guardarMateria } from "../lib/materias";
 import { TIEMPO_MINIMO_MS } from "../lib/constantes";
 import { esAnfitrion } from "../lib/salas";
 import { ApiError } from "../services/api";
@@ -32,11 +32,13 @@ export default function PanelPage() {
   const [mostrarModalEditarSala, setMostrarModalEditarSala] = useState(false);
   const [salaEditandoId, setSalaEditandoId] = useState("");
   const [nombreSalaEdit, setNombreSalaEdit] = useState("");
+  const [materiaSalaEdit, setMateriaSalaEdit] = useState("");
   const [mostrarConfirmarEliminar, setMostrarConfirmarEliminar] = useState(false);
   const [salaEliminandoId, setSalaEliminandoId] = useState("");
   const [mostrarModalEntrarSala, setMostrarModalEntrarSala] = useState(false);
   const [salaEntrandoId, setSalaEntrandoId] = useState("");
   const [salaEntrandoNombre, setSalaEntrandoNombre] = useState("");
+  const [errorIdSala, setErrorIdSala] = useState(false);
   const cargaMostradaEn = useRef<number | null>(null);
 
   useEffect(() => {
@@ -85,12 +87,17 @@ export default function PanelPage() {
     estado.salas.length > 0;
 
   const guardarNombreSala = async () => {
-    if (!nombreSalaEdit.trim() || !salaEditandoId) return;
+    if (!perfil || !nombreSalaEdit.trim() || !salaEditandoId) return;
     try {
       await actualizarSala(salaEditandoId, nombreSalaEdit.trim());
+      if (materiaSalaEdit.trim()) {
+        guardarMateria(perfil.uid, salaEditandoId, materiaSalaEdit.trim());
+      }
       setMostrarModalEditarSala(false);
       setSalaEditandoId("");
       setNombreSalaEdit("");
+      setMateriaSalaEdit("");
+      reintentar();
     } catch {
       // Error manejado por peticion (ApiError)
     }
@@ -215,11 +222,13 @@ export default function PanelPage() {
                         ? [
                             {
                               texto: "Editar sala",
-                              onClick: () => {
-                                setSalaEditandoId(sala.id);
-                                setNombreSalaEdit(sala.nombre);
-                                setMostrarModalEditarSala(true);
-                              },
+                                onClick: () => {
+                                  if (!perfil) return;
+                                  setSalaEditandoId(sala.id);
+                                  setNombreSalaEdit(sala.nombre);
+                                  setMateriaSalaEdit(obtenerMateria(perfil.uid, sala.id) ?? "");
+                                  setMostrarModalEditarSala(true);
+                                },
                             },
                             {
                               texto: "Eliminar sala",
@@ -291,9 +300,12 @@ export default function PanelPage() {
               etiqueta="ID de la sala"
               obligatorio
               value={idSala}
-              onChange={(e) => setIdSala(e.target.value.trim())}
-              placeholder="introduce ID aqui"
-              error={idSala.length === 0 ? "Ingresa un ID válido." : null}
+              onChange={(e) => {
+                setIdSala(e.target.value.trim());
+                setErrorIdSala(false);
+              }}
+              placeholder="Introduce ID aquí"
+              error={errorIdSala ? "Ingresa un ID válido." : null}
             />
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
               <Boton variante="neutral" onClick={() => setMostrarModalUnirSala(false)}>
@@ -305,16 +317,19 @@ export default function PanelPage() {
                 cargando={uniendo}
                 textoCargando="Uniendo…"
                 onClick={async () => {
+                  if (idSala.length === 0) {
+                    setErrorIdSala(true);
+                    return;
+                  }
                   setUniendo(true);
                   try {
                     await unirASala(idSala);
+                    setErrorIdSala(false);
                     navegar(`/salas/${encodeURIComponent(idSala)}`);
                   } catch {
-                    // El error ya se maneja en peticion (ApiError); se deja que la navegación falle o se muestre en consola
+                    setErrorIdSala(true);
                   } finally {
                     setUniendo(false);
-                    setMostrarModalUnirSala(false);
-                    setIdSala("");
                   }
                 }}
               >
@@ -339,15 +354,23 @@ export default function PanelPage() {
               </button>
             </div>
             <p className="mb-6 text-sm text-text-muted">
-              Cambia el nombre de la sala.
+              Cambia el nombre y la materia o tema principal de la sala.
             </p>
             <Campo
               id="editar-sala-nombre"
               etiqueta="Nombre de la sala"
               obligatorio
               value={nombreSalaEdit}
-              onChange={(e) => setNombreSalaEdit(e.target.value.trim())}
+              onChange={(e) => setNombreSalaEdit(e.target.value)}
               placeholder="Nombre de la sala"
+            />
+            <Campo
+              id="editar-sala-materia"
+              etiqueta="Materia o tema principal"
+              obligatorio={false}
+              value={materiaSalaEdit}
+              onChange={(e) => setMateriaSalaEdit(e.target.value)}
+              placeholder="Ej: Matemáticas, Física, Programación"
             />
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
               <Boton variante="neutral" onClick={() => setMostrarModalEditarSala(false)}>
