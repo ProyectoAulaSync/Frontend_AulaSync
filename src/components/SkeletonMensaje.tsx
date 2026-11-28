@@ -12,11 +12,11 @@ export function SkeletonMensaje({ lado }: SkeletonMensajeProps) {
   return (
     <div key={lado} className={`mb-3 ${claseContenedor}`}>
       <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-semibold text-text-subtle" />
-        <span className="text-xs text-text-muted" />
+        <span className="text-sm font-semibold text-text-subtle" />
+        <span className="text-sm text-text-muted" />
       </div>
       <p
-        className={`max-w-[72%] rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words bg-[#F1F4F8] text-text-muted`}
+        className={`max-w-[72%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words bg-[#F1F4F8] text-text-muted`}
       />
     </div>
   );

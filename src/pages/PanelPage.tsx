@@ -1,8 +1,10 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Hash, Plus, Users } from "lucide-react";
+import { Plus, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Boton from "../components/Boton";
+import Campo from "../components/Campo";
 import CargandoTarjetas from "../components/CargandoTarjetas";
+import MenuOpciones from "../components/MenuOpciones";
 import EstadoError from "../components/EstadoError";
 import EstadoVacio from "../components/EstadoVacio";
 import Mensaje from "../components/Mensaje";
@@ -22,6 +24,8 @@ export default function PanelPage() {
   const { estado, reintentar } = useSalas();
   const [mostrarCarga, setMostrarCarga] = useState(false);
   const [avisoCopiado, setAvisoCopiado] = useState<{ salaId: string; texto: string } | null>(null);
+  const [mostrarModalUnirSala, setMostrarModalUnirSala] = useState(false);
+  const [idSala, setIdSala] = useState("");
   const cargaMostradaEn = useRef<number | null>(null);
 
   useEffect(() => {
@@ -70,7 +74,7 @@ export default function PanelPage() {
     estado.salas.length > 0;
 
   return (
-    <main className="page-container bg-transparent">
+    <main className="page-container">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <h1 className="text-primary">Mis salas</h1>
@@ -82,9 +86,11 @@ export default function PanelPage() {
           <>
             <Boton
               variante="neutral"
-              onClick={() => navegar("/unir-sala")}
+              onClick={() => {
+                setIdSala("");
+                setMostrarModalUnirSala(true);
+              }}
             >
-              <Hash aria-hidden="true" className="h-5 w-5" />
               Unirme con un ID
             </Boton>
             <Link
@@ -152,8 +158,22 @@ export default function PanelPage() {
               return (
                 <li
                   key={sala.id}
-                  className="flex min-w-0 flex-col rounded-xl border border-border-decor bg-white p-5 shadow-sm"
+                  className="relative flex min-w-0 flex-col rounded-xl border border-border-decor bg-white p-5 shadow-sm"
                 >
+                  <div className="absolute top-4 right-4">
+                    <MenuOpciones
+                      opciones={[
+                        {
+                          texto: "Copiar ID",
+                          onClick: () => void copiarId(sala.id),
+                        },
+                        {
+                          texto: "Entrar",
+                          onClick: () => navegar(`/salas/${encodeURIComponent(sala.id)}`),
+                        },
+                      ]}
+                    />
+                  </div>
                   {esPropietario && (
                     <span className="mb-3 w-fit rounded-full bg-primary-tint px-3 py-1 text-sm font-semibold text-primary-active">
                       Anfitrión
@@ -169,20 +189,57 @@ export default function PanelPage() {
                   >
                     {aviso}
                   </p>
-                  <div className="mt-auto flex flex-wrap gap-3 pt-2">
-                    <Boton variante="neutral" onClick={() => void copiarId(sala.id)}>
-                      Copiar ID
-                    </Boton>
-                    <Link to={`/salas/${encodeURIComponent(sala.id)}`} className="btn btn-neutral">
-                      Entrar
-                    </Link>
-                  </div>
                 </li>
               );
             })}
           </ul>
         )}
       </div>
+
+      {/* Modal: Unirse con un ID */}
+      {mostrarModalUnirSala && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-ink">Unirse con un ID</h3>
+              <button
+                onClick={() => setMostrarModalUnirSala(false)}
+                className="text-text-muted hover:text-ink"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-6 text-sm text-text-muted">
+              Ingresa el ID de la sala a la que deseas unirte.
+            </p>
+            <Campo
+              id="unir-sala-id"
+              etiqueta="ID de la sala"
+              obligatorio
+              value={idSala}
+              onChange={(e) => setIdSala(e.target.value.trim())}
+              placeholder="introduce ID aqui"
+              error={idSala.length === 0 ? "Ingresa un ID válido." : null}
+            />
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+              <Boton variante="neutral" onClick={() => setMostrarModalUnirSala(false)}>
+                Cancelar
+              </Boton>
+              <Boton
+                variante="primary"
+                disabled={idSala.length === 0}
+                onClick={() => {
+                  navegar(`/salas/${encodeURIComponent(idSala)}`);
+                  setMostrarModalUnirSala(false);
+                  setIdSala("");
+                }}
+              >
+                Unirme
+              </Boton>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
